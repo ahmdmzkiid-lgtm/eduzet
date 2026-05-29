@@ -583,7 +583,7 @@ const ImportCSV = () => {
 
       <footer className="mt-12 pt-8 border-t border-outline-variant/30">
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="text-on-surface-variant font-label-sm text-label-sm">© 2024 Eduzet UTBK Platform. All rights reserved.</div>
+          <div className="text-on-surface-variant font-label-sm text-label-sm">© 2026 Eduzet UTBK Platform. All rights reserved.</div>
           <div className="flex gap-6">
             <span className="text-on-surface-variant hover:text-primary font-label-sm text-label-sm cursor-pointer">Privacy Policy</span>
             <span className="text-on-surface-variant hover:text-primary font-label-sm text-label-sm cursor-pointer">Terms of Service</span>

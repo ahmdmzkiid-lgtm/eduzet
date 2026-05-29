@@ -57,7 +57,7 @@ async function runSeed() {
       ($1, $2, $3)
       ON CONFLICT (title) DO NOTHING
     `, [
-      'Simulasi SNBT 2024 - Batch 1',
+      'Simulasi SNBT 2026 - Batch 1',
       JSON.stringify({
         total_questions: questionIds.length,
         time_limit_minutes: 90

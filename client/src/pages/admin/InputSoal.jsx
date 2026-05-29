@@ -391,7 +391,7 @@ const InputSoal = () => {
       {/* Footer */}
       <footer className="mt-12 py-6 border-t border-outline-variant/30 text-center">
         <p className="font-label-sm text-label-sm text-on-surface-variant opacity-60">
-          © 2024 Eduzet UTBK Platform. All Rights Reserved.
+          © 2026 Eduzet UTBK Platform. All Rights Reserved.
         </p>
       </footer>
     </div>

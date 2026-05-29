@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS um_answer_choices (
 
 -- Banner settings for ujian mandiri page
 INSERT INTO site_settings (key, value) VALUES
-  ('um_banner', '{"badge":"AKADEMIK 2025","title":"Eksplorasi Ujian Mandiri 2025","description":"Temukan peluang pendidikan terbaik di institusi pendidikan tinggi terkemuka Indonesia.","primaryButtonText":"Mulai Registrasi","primaryButtonLink":"","secondaryButtonText":"Unduh Panduan (PDF)","secondaryButtonLink":"","image":"https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800","verifiedLabel":"TERVERIFIKASI","verifiedText":"Institusi Utama"}')
+  ('um_banner', '{"badge":"AKADEMIK 2026","title":"Eksplorasi Ujian Mandiri 2026","description":"Temukan peluang pendidikan terbaik di institusi pendidikan tinggi terkemuka Indonesia.","primaryButtonText":"Mulai Registrasi","primaryButtonLink":"","secondaryButtonText":"Unduh Panduan (PDF)","secondaryButtonLink":"","image":"https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800","verifiedLabel":"TERVERIFIKASI","verifiedText":"Institusi Utama"}') 
 ON CONFLICT (key) DO NOTHING;
 
 -- Add peserta column if not exists (for existing databases)

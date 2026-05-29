@@ -405,7 +405,7 @@ const UserManagement = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div>
             <p className="font-label-md text-label-md text-primary font-bold">Eduzet Pro</p>
-            <p className="font-label-sm text-label-sm text-on-surface-variant">© 2024 UTBK Learning Systems. All rights reserved.</p>
+            <p className="font-label-sm text-label-sm text-on-surface-variant">© 2026 UTBK Learning Systems. All rights reserved.</p>
           </div>
           <div className="flex gap-8">
             <span className="text-on-surface-variant hover:text-primary font-label-sm text-label-sm cursor-pointer transition-colors">Help Center</span>

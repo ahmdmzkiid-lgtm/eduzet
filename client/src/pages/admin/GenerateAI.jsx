@@ -371,7 +371,7 @@ const GenerateAI = () => {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-primary">Eduzet</span>
-            <span className="text-on-surface-variant text-label-sm">© 2024 AI Learning Portal</span>
+            <span className="text-on-surface-variant text-label-sm">© 2026 AI Learning Portal</span>
           </div>
           <div className="flex gap-6">
             <span className="text-label-sm text-on-surface-variant hover:text-primary cursor-pointer transition-colors">Privacy Policy</span>

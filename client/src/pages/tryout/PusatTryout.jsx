@@ -128,7 +128,7 @@ const PusatTryout = () => {
   const [riwayatData, setRiwayatData] = useState(null);
   const [bannerConfig, setBannerConfig] = useState({
     image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1600&q=80',
-    title: 'Tryout Nasional Akbar\nUTBK-SNBT 2024',
+    title: 'Tryout Nasional Akbar\nUTBK-SNBT 2026',
     startTime: '04 : 12 : 55 : 20'
   });
 

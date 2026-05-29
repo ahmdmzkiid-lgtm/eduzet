@@ -276,7 +276,7 @@ const AdminSettings = () => {
             <textarea
               value={tryoutTitle}
               onChange={e => setTryoutTitle(e.target.value)}
-              placeholder="Tryout Nasional Akbar&#10;UTBK-SNBT 2024"
+              placeholder="Tryout Nasional Akbar&#10;UTBK-SNBT 2026"
               rows={2}
               className="w-full bg-surface-container-low border border-outline-variant rounded-lg py-2.5 px-4 font-label-md text-on-surface focus:ring-2 focus:ring-primary outline-none resize-none"
             />

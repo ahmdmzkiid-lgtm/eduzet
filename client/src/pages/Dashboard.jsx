@@ -353,7 +353,7 @@ const Dashboard = () => {
               <h3 className="text-[24px] font-semibold leading-8 mb-2 text-[#191b24]">Mulai Latihan Soal</h3>
               <p className="text-[16px] leading-6 text-[#424656] mb-4">Latihan soal per bab untuk mengasah pemahamanmu.</p>
               <ul className="text-[14px] text-[#727687] mb-6 space-y-2">
-                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px] text-[#a33200]">check_circle</span> Soal FR UTBK 2023-2025</li>
+                <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px] text-[#a33200]">check_circle</span> Soal FR UTBK 2023-2026</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px] text-[#a33200]">check_circle</span> Easy, Medium hingga HOTS</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px] text-[#a33200]">check_circle</span> LBI/LBE SAINTEK SOSHUM</li>
                 <li className="flex items-center gap-2"><span className="material-symbols-outlined text-[16px] text-[#a33200]">check_circle</span> Kalkulator PM</li>

@@ -6,7 +6,7 @@ import { ujianMandiriService } from '../../services/api';
 import { STATUS_OPTIONS, getStatusConfig } from '../../data/ujianMandiriData';
 
 const DEFAULT_BANNER = {
-  badge: 'AKADEMIK 2025', title: 'Eksplorasi Ujian Mandiri 2025',
+  badge: 'AKADEMIK 2026', title: 'Eksplorasi Ujian Mandiri 2026',
   description: 'Temukan peluang pendidikan terbaik di institusi pendidikan tinggi terkemuka Indonesia.',
   primaryButtonText: 'Mulai Registrasi', primaryButtonLink: '',
   secondaryButtonText: 'Unduh Panduan (PDF)', secondaryButtonLink: '',
@@ -806,7 +806,7 @@ export default function ManageUjianMandiri() {
               </div>
               <div>
                 <label className={labelCls}>Deadline / Tanggal</label>
-                <input className={inputCls} value={form.deadline || ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} placeholder="e.g. 15 Juli 2024" />
+                <input className={inputCls} value={form.deadline || ''} onChange={(e) => setForm({ ...form, deadline: e.target.value })} placeholder="e.g. 15 Juli 2026" />
               </div>
               <div className="sm:col-span-2">
                 <label className={labelCls}>Lokasi</label>
