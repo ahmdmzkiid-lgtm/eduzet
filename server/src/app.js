@@ -1,4 +1,6 @@
 const path = require('path');
+// Load .env: first try server-local (for Render), then root (for local dev)
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 const express = require('express');
@@ -13,7 +15,15 @@ const app = express();
 app.use(helmet({
   crossOriginOpenerPolicy: false,
 }));
-app.use(cors({ origin: '*' })); // Allow frontend origin in prod
+const allowedOrigins = process.env.CLIENT_URL
+  ? [process.env.CLIENT_URL, 'http://localhost:5173', 'http://localhost:8080']
+  : ['*'];
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? process.env.CLIENT_URL || '*'
+    : '*',
+  credentials: true,
+}));
 app.use(express.json());
 app.use(morgan('dev'));
 

@@ -15,8 +15,8 @@
 - **Runtime:** Node
 
 **Build & Deploy:**
-- **Build Command:** `npm ci && npm run build` (jika ada build step)
-- **Start Command:** `node src/app.js`
+- **Build Command:** `npm ci`
+- **Start Command:** `npm start`
 - **Root Directory:** `server` (karena backend di folder server)
 
 **Environment Variables:**
