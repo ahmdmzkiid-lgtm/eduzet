@@ -28,7 +28,7 @@ const CATEGORY_MAP = {
 const TryoutSubtesSelect = () => {
   const { packageId } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [pkg, setPkg] = useState(null);
   const [subjects, setSubjects] = useState([]);
