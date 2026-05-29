@@ -1,0 +1,119 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { AuthProvider } from './context/AuthContext';
+import { ProtectedRoute, AdminRoute, PublicRoute, StudentRoute, StudentRouteWrapped } from './components/layout/ProtectedRoute';
+
+// Pages
+import LandingPage from './pages/LandingPage';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import LatihanSoal from './pages/LatihanSoal';
+import PusatTryout from './pages/tryout/PusatTryout';
+import TryoutSession from './pages/TryoutSession';
+import TryoutSessionNew from './pages/TryoutSessionNew';
+import TryoutSubtesSelect from './pages/tryout/TryoutSubtesSelect';
+import HasilTryout from './pages/HasilTryout';
+import Bookmark from './pages/Bookmark';
+import Riwayat from './pages/Riwayat';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import InputSoal from './pages/admin/InputSoal';
+import ImportCSV from './pages/admin/ImportCSV';
+// GenerateAI removed
+import UserManagement from './pages/admin/UserManagement';
+import AdminSettings from './pages/admin/AdminSettings';
+import ManageLatihan from './pages/admin/ManageLatihan';
+import LatihanPraktik from './pages/tryout/LatihanPraktik';
+import LatihanResult from './pages/tryout/LatihanResult';
+import TryoutResult from './pages/tryout/TryoutResult';
+import TopikLatihan from './pages/tryout/TopikLatihan';
+import ManageTryout from './pages/admin/ManageTryout';
+import ManageBattleSoal from './pages/admin/ManageBattleSoal';
+import PricingPage from './pages/PricingPage';
+import KonsultasiKakZ from './pages/KonsultasiKakZ';
+import BattleLobby from './pages/BattleLobby';
+import BattleGame from './pages/BattleGame';
+import BattleLeaderboard from './pages/BattleLeaderboard';
+import PrediksiSkor from './pages/PrediksiSkor';
+import UjianMandiri from './pages/UjianMandiri';
+import UjianMandiriDetail from './pages/UjianMandiriDetail';
+import ManageUjianMandiri from './pages/admin/ManageUjianMandiri';
+import ManageTryoutRegistrations from './pages/admin/ManageTryoutRegistrations';
+import LatihanSoalUM from './pages/LatihanSoalUM';
+import LatihanSoalUMResult from './pages/LatihanSoalUMResult';
+import TryoutSessionUM from './pages/TryoutSessionUM';
+import TryoutUMResult from './pages/TryoutUMResult';
+
+
+function App() {
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+
+  return (
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+      <Router>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route element={<PublicRoute />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Route>
+          
+          {/* Student routes — pages have their own navbar/layout */}
+          <Route element={<StudentRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/latihan" element={<LatihanSoal />} />
+            <Route path="/tryout/packages" element={<PusatTryout />} />
+            <Route path="/latihan/praktik/:subjectId" element={<LatihanPraktik />} />
+            <Route path="/latihan/hasil" element={<LatihanResult />} />
+            <Route path="/latihan/:subjectId" element={<TopikLatihan />} />
+            <Route path="/tryout/select/:packageId" element={<TryoutSubtesSelect />} />
+            <Route path="/tryout/:sessionId" element={<TryoutSession />} />
+            <Route path="/tryout/new/:sessionId" element={<TryoutSessionNew />} />
+            <Route path="/tryout/hasil/:sessionId" element={<TryoutResult />} />
+            <Route path="/riwayat" element={<Riwayat />} />
+            <Route path="/konsultasi" element={<KonsultasiKakZ />} />
+            <Route path="/battle" element={<BattleLobby />} />
+            <Route path="/battle/game/:matchId" element={<BattleGame />} />
+            <Route path="/battle/leaderboard/:subjectId" element={<BattleLeaderboard />} />
+            <Route path="/prediksi-skor" element={<PrediksiSkor />} />
+            <Route path="/ujian-mandiri" element={<UjianMandiri />} />
+            <Route path="/ujian-mandiri/:id" element={<UjianMandiriDetail />} />
+            <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId" element={<LatihanSoalUM />} />
+            <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId/hasil" element={<LatihanSoalUMResult />} />
+            <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId" element={<TryoutSessionUM />} />
+            <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId/hasil/:sessionId" element={<TryoutUMResult />} />
+          </Route>
+
+          {/* Student routes that need PageWrapper (no own navbar) */}
+          <Route element={<StudentRouteWrapped />}>
+            <Route path="/bookmark" element={<Bookmark />} />
+          </Route>
+          
+          {/* Admin Routes */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminDashboard />}>
+              <Route path="input" element={<InputSoal />} />
+              <Route path="import" element={<ImportCSV />} />
+              <Route path="users" element={<UserManagement />} />
+              <Route path="settings" element={<AdminSettings />} />
+              <Route path="latihan" element={<ManageLatihan />} />
+              <Route path="tryout" element={<ManageTryout />} />
+              <Route path="battle" element={<ManageBattleSoal />} />
+              <Route path="ujian-mandiri" element={<ManageUjianMandiri />} />
+              <Route path="tryout-registrations" element={<ManageTryoutRegistrations />} />
+            </Route>
+          </Route>
+          
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </Router>
+      </AuthProvider>
+    </GoogleOAuthProvider>
+  );
+}
+
+export default App;

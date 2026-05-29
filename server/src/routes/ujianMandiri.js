@@ -1,0 +1,893 @@
+const express = require('express');
+const router = express.Router();
+const { pool } = require('../config/db');
+const { verifyToken, verifyAdmin } = require('../middleware/auth');
+const multer = require('multer');
+const XLSX = require('xlsx');
+const upload = multer({ storage: multer.memoryStorage() });
+
+// ========== BANNER ==========
+router.get('/banner', verifyToken, async (req, res, next) => {
+  try {
+    const result = await pool.query("SELECT value FROM site_settings WHERE key = 'um_banner'");
+    const banner = result.rows.length > 0 ? JSON.parse(result.rows[0].value) : {};
+    res.json({ success: true, data: banner });
+  } catch (error) { next(error); }
+});
+
+router.patch('/banner', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const value = JSON.stringify(req.body);
+    await pool.query(
+      "INSERT INTO site_settings (key, value, updated_at) VALUES ('um_banner', $1, NOW()) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = NOW()",
+      [value]
+    );
+    res.json({ success: true, data: req.body });
+  } catch (error) { next(error); }
+});
+
+// ========== QUESTIONS (must be BEFORE /:id to avoid catch-all) ==========
+
+// Get questions for a tryout package or latihan
+router.get('/questions', verifyToken, async (req, res, next) => {
+  try {
+    const { tryout_package_id, latihan_id, parent_type, parent_id } = req.query;
+
+    // Free plan practice limit check
+    if (!tryout_package_id && (latihan_id || parent_type === 'latihan_soal')) {
+      const userRes = await pool.query('SELECT current_plan FROM users WHERE id = $1', [req.user.id]);
+      const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
+
+      if (currentPlan === 'gratis') {
+        const targetLatihanId = latihan_id || parent_id;
+        const latihanCountRes = await pool.query(
+          'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND latihan_id = $2',
+          [req.user.id, targetLatihanId]
+        );
+        const totalLatihan = parseInt(latihanCountRes.rows[0].count);
+        if (totalLatihan >= 1) {
+          return res.status(403).json({
+            success: false,
+            error: 'Akun gratis hanya dapat mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke Premium untuk akses tanpa batas.',
+            code: 'FREE_LIMIT_REACHED'
+          });
+        }
+      }
+    }
+
+    console.log('GET questions params:', { tryout_package_id, latihan_id, parent_type, parent_id });
+    
+    let where, params;
+    if (tryout_package_id || (parent_type === 'tryout_package' && parent_id)) {
+      where = 'q.tryout_package_id = $1';
+      params = [tryout_package_id || parent_id];
+    } else if (latihan_id || (parent_type === 'latihan_soal' && parent_id)) {
+      where = 'q.latihan_id = $1';
+      params = [latihan_id || parent_id];
+    } else {
+      return res.status(400).json({ success: false, error: 'Provide tryout_package_id or latihan_id' });
+    }
+    const result = await pool.query(
+      `SELECT q.*, 
+       COALESCE(json_agg(json_build_object(
+         'id', ac.id, 'label', ac.label, 'content', ac.content,
+         'is_correct', ac.is_correct, 'explanation', ac.explanation
+       ) ORDER BY ac.label) FILTER (WHERE ac.id IS NOT NULL), '[]') as choices
+       FROM um_questions q
+       LEFT JOIN um_answer_choices ac ON ac.question_id = q.id
+       WHERE ${where}
+       GROUP BY q.id
+       ORDER BY q.display_order ASC, q.created_at ASC`,
+      params
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    console.error('GET questions error:', error.message);
+    next(error);
+  }
+});
+
+// Excel import (must be BEFORE /questions/:id)
+router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file')], async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    console.log('Import request body:', req.body);
+    console.log('Import file:', req.file ? req.file.originalname : 'No file');
+    
+    if (!req.file) return res.status(400).json({ success: false, error: 'No file uploaded' });
+    const { difficulty, parent_type, parent_id } = req.body;
+    let { tryout_package_id, latihan_id } = req.body;
+    if (parent_type === 'tryout_package' && parent_id) tryout_package_id = parent_id;
+    if (parent_type === 'latihan_soal' && parent_id) latihan_id = parent_id;
+    
+    console.log('Resolved IDs:', { tryout_package_id, latihan_id });
+    
+    if (!tryout_package_id && !latihan_id) {
+      return res.status(400).json({ success: false, error: 'Provide tryout_package_id or latihan_id' });
+    }
+
+    // Verify the parent exists
+    if (tryout_package_id) {
+      const check = await pool.query('SELECT id FROM um_tryout_packages WHERE id = $1', [tryout_package_id]);
+      if (check.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Tryout package not found' });
+      }
+    }
+    if (latihan_id) {
+      const check = await pool.query('SELECT id FROM um_latihan_soal WHERE id = $1', [latihan_id]);
+      if (check.rows.length === 0) {
+        return res.status(404).json({ success: false, error: 'Latihan not found' });
+      }
+    }
+
+    const wb = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+    const resolve = (row, aliases) => {
+      for (const a of aliases) {
+        if (row[a] !== undefined && row[a] !== '') return String(row[a]);
+      }
+      return '';
+    };
+
+    const ALIASES = {
+      soal: ['SOAL', 'soal', 'Soal', 'content', 'pertanyaan', 'Pertanyaan', 'PERTANYAAN'],
+      opsiA: ['OPSI A', 'opsi a', 'Opsi A', 'A', 'a', 'Jawaban A'],
+      opsiB: ['OPSI B', 'opsi b', 'Opsi B', 'B', 'b', 'Jawaban B'],
+      opsiC: ['OPSI C', 'opsi c', 'Opsi C', 'C', 'c', 'Jawaban C'],
+      opsiD: ['OPSI D', 'opsi d', 'Opsi D', 'D', 'd', 'Jawaban D'],
+      opsiE: ['OPSI E', 'opsi e', 'Opsi E', 'E', 'e', 'Jawaban E'],
+      kunci: ['KUNCI JAWABAN', 'kunci jawaban', 'Kunci Jawaban', 'Kunci', 'kunci', 'KUNCI', 'JAWABAN', 'jawaban', 'Jawaban', 'key', 'answer'],
+      pembahasan: ['PEMBAHASAN', 'pembahasan', 'Pembahasan', 'PENJELASAN', 'penjelasan', 'explanation'],
+    };
+
+    await client.query('BEGIN');
+    let imported = 0;
+
+    for (const row of rows) {
+      const soal = resolve(row, ALIASES.soal);
+      const opsiA = resolve(row, ALIASES.opsiA);
+      const opsiB = resolve(row, ALIASES.opsiB);
+      const opsiC = resolve(row, ALIASES.opsiC);
+      const opsiD = resolve(row, ALIASES.opsiD);
+      const opsiE = resolve(row, ALIASES.opsiE);
+      const kunci = resolve(row, ALIASES.kunci).toUpperCase().trim();
+      const pembahasan = resolve(row, ALIASES.pembahasan);
+
+      if (!soal || !opsiA || !opsiB) continue;
+      if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) continue;
+
+      const qRes = await client.query(
+        `INSERT INTO um_questions (tryout_package_id, latihan_id, content, difficulty, display_order)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        [tryout_package_id || null, latihan_id || null, soal, difficulty || 'medium', imported]
+      );
+      const qId = qRes.rows[0].id;
+
+      const options = [
+        { label: 'A', content: opsiA },
+        { label: 'B', content: opsiB },
+      ];
+      if (opsiC) options.push({ label: 'C', content: opsiC });
+      if (opsiD) options.push({ label: 'D', content: opsiD });
+      if (opsiE) options.push({ label: 'E', content: opsiE });
+
+      for (const opt of options) {
+        await client.query(
+          `INSERT INTO um_answer_choices (question_id, label, content, is_correct, explanation)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [qId, opt.label, opt.content, opt.label === kunci, opt.label === kunci ? pembahasan : null]
+        );
+      }
+      imported++;
+    }
+
+    await client.query('COMMIT');
+    console.log('Import successful:', { imported, total_rows: rows.length });
+    res.json({ success: true, imported, total_rows: rows.length });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Import error:', error.message, error.stack);
+    res.status(500).json({ success: false, error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// Delete all questions for a tryout package or latihan (must be BEFORE /questions/:id)
+router.delete('/questions/bulk', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { tryout_package_id, latihan_id } = req.body;
+    let result;
+    if (tryout_package_id) {
+      result = await pool.query('DELETE FROM um_questions WHERE tryout_package_id = $1', [tryout_package_id]);
+    } else if (latihan_id) {
+      result = await pool.query('DELETE FROM um_questions WHERE latihan_id = $1', [latihan_id]);
+    } else {
+      return res.status(400).json({ success: false, error: 'Provide tryout_package_id or latihan_id' });
+    }
+    res.json({ success: true, deleted: result.rowCount });
+  } catch (error) { next(error); }
+});
+
+// Create a single question
+router.post('/questions', [verifyToken, verifyAdmin], async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { tryout_package_id, latihan_id, content, image_url, difficulty, choices } = req.body;
+
+    const qResult = await client.query(
+      `INSERT INTO um_questions (tryout_package_id, latihan_id, content, image_url, difficulty)
+       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+      [tryout_package_id || null, latihan_id || null, content, image_url || null, difficulty || 'medium']
+    );
+    const question = qResult.rows[0];
+
+    if (choices && choices.length > 0) {
+      for (const c of choices) {
+        await client.query(
+          `INSERT INTO um_answer_choices (question_id, label, content, is_correct, explanation)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [question.id, c.label, c.content, c.is_correct || false, c.explanation || null]
+        );
+      }
+    }
+    await client.query('COMMIT');
+
+    // Re-fetch with choices
+    const full = await pool.query(
+      `SELECT q.*, json_agg(json_build_object(
+         'id', ac.id, 'label', ac.label, 'content', ac.content,
+         'is_correct', ac.is_correct, 'explanation', ac.explanation
+       ) ORDER BY ac.label) as choices
+       FROM um_questions q
+       LEFT JOIN um_answer_choices ac ON ac.question_id = q.id
+       WHERE q.id = $1 GROUP BY q.id`,
+      [question.id]
+    );
+    res.status(201).json({ success: true, data: full.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
+// Update a question
+router.patch('/questions/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { content, image_url, difficulty, choices } = req.body;
+
+    await client.query(
+      `UPDATE um_questions SET content = COALESCE($1, content), image_url = $2,
+       difficulty = COALESCE($3, difficulty) WHERE id = $4`,
+      [content, image_url !== undefined ? image_url : null, difficulty, req.params.id]
+    );
+
+    if (choices && choices.length > 0) {
+      await client.query('DELETE FROM um_answer_choices WHERE question_id = $1', [req.params.id]);
+      for (const c of choices) {
+        await client.query(
+          `INSERT INTO um_answer_choices (question_id, label, content, is_correct, explanation)
+           VALUES ($1, $2, $3, $4, $5)`,
+          [req.params.id, c.label, c.content, c.is_correct || false, c.explanation || null]
+        );
+      }
+    }
+    await client.query('COMMIT');
+
+    const full = await pool.query(
+      `SELECT q.*, json_agg(json_build_object(
+         'id', ac.id, 'label', ac.label, 'content', ac.content,
+         'is_correct', ac.is_correct, 'explanation', ac.explanation
+       ) ORDER BY ac.label) as choices
+       FROM um_questions q
+       LEFT JOIN um_answer_choices ac ON ac.question_id = q.id
+       WHERE q.id = $1 GROUP BY q.id`,
+      [req.params.id]
+    );
+    res.json({ success: true, data: full.rows[0] });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
+// Delete a question
+router.delete('/questions/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM um_questions WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
+// ========== TRYOUT PACKAGES (specific routes before /:id) ==========
+router.patch('/tryout-packages/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { title, description, icon, icon_color, duration, peserta, points_correct, points_incorrect, points_unanswered } = req.body;
+    const result = await pool.query(
+      `UPDATE um_tryout_packages SET title = COALESCE($1, title), description = COALESCE($2, description),
+       icon = COALESCE($3, icon), icon_color = COALESCE($4, icon_color), duration = COALESCE($5, duration),
+       peserta = COALESCE($6, peserta),
+       points_correct = COALESCE($7, points_correct), points_incorrect = COALESCE($8, points_incorrect),
+       points_unanswered = COALESCE($9, points_unanswered)
+       WHERE id = $10 RETURNING *`,
+      [title, description, icon, icon_color, duration, peserta, points_correct, points_incorrect, points_unanswered, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.delete('/tryout-packages/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM um_tryout_packages WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
+// ========== LATIHAN SOAL (specific routes before /:id) ==========
+router.patch('/latihan/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered } = req.body;
+    const result = await pool.query(
+      `UPDATE um_latihan_soal SET title = COALESCE($1, title), description = COALESCE($2, description),
+       category = COALESCE($3, category), icon = COALESCE($4, icon), icon_bg_color = COALESCE($5, icon_bg_color),
+       category_color = COALESCE($6, category_color), button_style = COALESCE($7, button_style),
+       points_correct = COALESCE($8, points_correct), points_incorrect = COALESCE($9, points_incorrect),
+       points_unanswered = COALESCE($10, points_unanswered)
+       WHERE id = $11 RETURNING *`,
+      [title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.delete('/latihan/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM um_latihan_soal WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
+// ========== UJIAN MANDIRI CRUD ==========
+router.get('/', verifyToken, async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT * FROM ujian_mandiri ORDER BY display_order ASC, created_at DESC');
+    res.json({ success: true, data: result.rows });
+  } catch (error) { next(error); }
+});
+
+// NOTE: /:id MUST be AFTER all specific routes like /questions, /banner, /tryout-packages, /latihan
+// otherwise it will catch those requests and treat the path segment as an ID
+router.get('/:id', verifyToken, async (req, res, next) => {
+  try {
+    const result = await pool.query('SELECT * FROM ujian_mandiri WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.post('/', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { universitas, nama_ujian, status, deadline, lokasi, image, logo, detail_link } = req.body;
+    const result = await pool.query(
+      `INSERT INTO ujian_mandiri (universitas, nama_ujian, status, deadline, lokasi, image, logo, detail_link)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      [universitas, nama_ujian, status || 'open', deadline, lokasi, image, logo, detail_link]
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.patch('/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { universitas, nama_ujian, status, deadline, lokasi, image, logo, detail_link } = req.body;
+    const result = await pool.query(
+      `UPDATE ujian_mandiri SET universitas = COALESCE($1, universitas), nama_ujian = COALESCE($2, nama_ujian),
+       status = COALESCE($3, status), deadline = COALESCE($4, deadline), lokasi = COALESCE($5, lokasi),
+       image = COALESCE($6, image), logo = COALESCE($7, logo), detail_link = COALESCE($8, detail_link),
+       updated_at = NOW() WHERE id = $9 RETURNING *`,
+      [universitas, nama_ujian, status, deadline, lokasi, image, logo, detail_link, req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+router.delete('/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const result = await pool.query('DELETE FROM ujian_mandiri WHERE id = $1 RETURNING id', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
+    res.json({ success: true });
+  } catch (error) { next(error); }
+});
+
+// ========== PARAMETERIZED SUB-ROUTES (these use :ujianId which won't conflict) ==========
+router.get('/:ujianId/tryout-packages', verifyToken, async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT tp.*, 
+        (SELECT COUNT(*) FROM um_questions q WHERE q.tryout_package_id = tp.id) as soal_count,
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', ts.id,
+              'score', ts.total_score,
+              'submitted_at', ts.submitted_at,
+              'score_breakdown', ts.score_breakdown
+            ) ORDER BY ts.submitted_at DESC)
+            FROM um_tryout_sessions ts
+            WHERE ts.package_id = tp.id AND ts.user_id = $2 AND ts.submitted_at IS NOT NULL
+          ),
+          '[]'
+        ) as user_history
+       FROM um_tryout_packages tp 
+       WHERE tp.ujian_id = $1 
+       ORDER BY tp.display_order ASC, tp.created_at ASC`,
+      [req.params.ujianId, req.user.id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) { next(error); }
+});
+
+router.post('/:ujianId/tryout-packages', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { title, description, icon, icon_color, duration, peserta, points_correct, points_incorrect, points_unanswered } = req.body;
+    console.log('Creating tryout package:', { ujianId: req.params.ujianId, title, description, icon, icon_color, duration, peserta });
+    const result = await pool.query(
+      `INSERT INTO um_tryout_packages (ujian_id, title, description, icon, icon_color, duration, peserta, points_correct, points_incorrect, points_unanswered)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [req.params.ujianId, title, description, icon || 'auto_stories', icon_color || '#0050cb', duration || 120, peserta || 0,
+       points_correct !== undefined ? points_correct : 4, points_incorrect !== undefined ? points_incorrect : -1, points_unanswered !== undefined ? points_unanswered : 0]
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) {
+    console.error('Error creating tryout package:', error);
+    next(error);
+  }
+});
+
+router.get('/:ujianId/latihan', verifyToken, async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      `SELECT ls.*, 
+        (SELECT COUNT(*) FROM um_questions q WHERE q.latihan_id = ls.id) as soal_count,
+        COALESCE(
+          (
+            SELECT json_agg(json_build_object(
+              'id', s.id,
+              'score', s.irt_score,
+              'submitted_at', s.submitted_at,
+              'score_breakdown', s.score_breakdown
+            ) ORDER BY s.submitted_at DESC)
+            FROM latihan_sessions s
+            WHERE s.latihan_id = ls.id AND s.user_id = $2 AND s.submitted_at IS NOT NULL
+          ),
+          '[]'
+        ) as user_history
+       FROM um_latihan_soal ls 
+       WHERE ls.ujian_id = $1 
+       ORDER BY ls.display_order ASC, ls.created_at ASC`,
+      [req.params.ujianId, req.user.id]
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) { next(error); }
+});
+
+router.post('/:ujianId/latihan', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered } = req.body;
+    const result = await pool.query(
+      `INSERT INTO um_latihan_soal (ujian_id, title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+      [req.params.ujianId, title, description, category, icon || 'auto_stories', icon_bg_color || '#0050cb', category_color || '#0050cb', button_style || 'filled',
+       points_correct !== undefined ? points_correct : 4, points_incorrect !== undefined ? points_incorrect : -1, points_unanswered !== undefined ? points_unanswered : 0]
+    );
+    res.status(201).json({ success: true, data: result.rows[0] });
+  } catch (error) { next(error); }
+});
+
+// ========== UJIAN MANDIRI TRYOUT SIMULATION ENDPOINTS ==========
+
+// Start Ujian Mandiri Tryout Session
+router.post('/tryout/start', verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { tryout_package_id } = req.body;
+    const userId = req.user.id;
+
+    if (!tryout_package_id) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'tryout_package_id required' });
+    }
+
+    // Get user plan and perform free plan restrictions
+    const userRes = await client.query('SELECT current_plan FROM users WHERE id = $1', [userId]);
+    const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
+
+    if (currentPlan === 'gratis') {
+      // Check if this specific package has already been completed
+      const umCompleted = await client.query(
+        'SELECT COUNT(*) as count FROM um_tryout_sessions WHERE user_id = $1 AND package_id = $2 AND submitted_at IS NOT NULL',
+        [userId, tryout_package_id]
+      );
+      const totalCompleted = parseInt(umCompleted.rows[0].count);
+
+      if (totalCompleted >= 1) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          success: false,
+          error: 'Akun gratis hanya dapat mengerjakan setiap paket tryout sebanyak 1 kali. Upgrade ke Premium untuk akses tanpa batas.',
+          code: 'FREE_LIMIT_REACHED'
+        });
+      }
+
+      // Check if registration exists and is approved for this package
+      const regRes = await client.query(
+        "SELECT status FROM tryout_registrations WHERE user_id = $1 AND um_package_id = $2 AND status = 'approved'",
+        [userId, tryout_package_id]
+      );
+
+      if (regRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({
+          success: false,
+          error: 'Pendaftaran tryout belum diverifikasi admin.',
+          code: 'NOT_VERIFIED'
+        });
+      }
+    }
+
+    // Verify package exists
+    const pkgRes = await client.query(
+      'SELECT id, title, duration FROM um_tryout_packages WHERE id = $1',
+      [tryout_package_id]
+    );
+    if (pkgRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Paket tryout Ujian Mandiri tidak ditemukan' });
+    }
+    const pkg = pkgRes.rows[0];
+
+    // Create session
+    const sessionRes = await client.query(
+      'INSERT INTO um_tryout_sessions (user_id, package_id) VALUES ($1, $2) RETURNING id, started_at',
+      [userId, tryout_package_id]
+    );
+    const sessionId = sessionRes.rows[0].id;
+
+    // Fetch all questions for this package to copy to user answers
+    const questionsRes = await client.query(
+      'SELECT id FROM um_questions WHERE tryout_package_id = $1 ORDER BY display_order ASC, created_at ASC, id ASC',
+      [tryout_package_id]
+    );
+    const questions = questionsRes.rows;
+
+    if (questions.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Belum ada soal untuk paket tryout ini. Admin perlu menambahkan soal terlebih dahulu.' 
+      });
+    }
+
+    // Insert user answers with position order
+    for (let i = 0; i < questions.length; i++) {
+      await client.query(
+        'INSERT INTO um_user_answers (session_id, question_id, position) VALUES ($1, $2, $3)',
+        [sessionId, questions[i].id, i + 1]
+      );
+    }
+
+    await client.query('COMMIT');
+    res.json({
+      success: true,
+      data: {
+        session_id: sessionId,
+        total_questions: questions.length,
+        duration: pkg.duration || 60
+      },
+      message: 'Ujian Mandiri Tryout session started'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
+// Get Questions for Ujian Mandiri Session (Single Fetch)
+router.get('/tryout/session/:sessionId/questions', verifyToken, async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user.id;
+
+    // Verify session
+    const sessionRes = await pool.query(
+      `SELECT ts.id, ts.package_id, tp.title, tp.duration 
+       FROM um_tryout_sessions ts
+       JOIN um_tryout_packages tp ON ts.package_id = tp.id
+       WHERE ts.id = $1 AND ts.user_id = $2`,
+      [sessionId, userId]
+    );
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Sesi tidak ditemukan atau tidak authorized' });
+    }
+    const sessionInfo = sessionRes.rows[0];
+
+    // Fetch questions in position order
+    const result = await pool.query(
+      `SELECT q.id, q.content, q.image_url, q.difficulty, ua.position, ua.chosen_choice_id, ua.is_flagged
+       FROM um_user_answers ua
+       JOIN um_questions q ON ua.question_id = q.id
+       WHERE ua.session_id = $1
+       ORDER BY ua.position ASC`,
+      [sessionId]
+    );
+
+    // Fetch answer choices for all questions in this session
+    const choicesResult = await pool.query(
+      `SELECT ac.id, ac.question_id, ac.label, ac.content
+       FROM um_answer_choices ac
+       JOIN um_user_answers ua ON ac.question_id = ua.question_id
+       WHERE ua.session_id = $1
+       ORDER BY ac.label ASC`,
+      [sessionId]
+    );
+
+    // Group choices by question ID
+    const choicesMap = {};
+    choicesResult.rows.forEach(choice => {
+      if (!choicesMap[choice.question_id]) {
+        choicesMap[choice.question_id] = [];
+      }
+      choicesMap[choice.question_id].push(choice);
+    });
+
+    // Attach choices to questions
+    result.rows.forEach(q => {
+      q.choices = choicesMap[q.id] || [];
+    });
+
+    res.json({
+      success: true,
+      data: result.rows,
+      package: {
+        title: sessionInfo.title,
+        duration: sessionInfo.duration || 60
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching UM session questions:', error);
+    next(error);
+  }
+});
+
+// Bulk Submit Answers for Ujian Mandiri Session
+router.post('/tryout/submit-bulk', verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    const { sessionId, answers } = req.body;
+    const userId = req.user.id;
+
+    if (!sessionId || !Array.isArray(answers)) {
+      return res.status(400).json({ success: false, error: 'Invalid payload. Required: sessionId, answers[]' });
+    }
+
+    await client.query('BEGIN');
+
+    // Check session
+    const sessionRes = await client.query(
+      'SELECT id, submitted_at FROM um_tryout_sessions WHERE id = $1 AND user_id = $2',
+      [sessionId, userId]
+    );
+    if (sessionRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Sesi tidak ditemukan atau tidak authorized' });
+    }
+
+    if (sessionRes.rows[0].submitted_at) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'Sesi ini sudah dikumpulkan sebelumnya' });
+    }
+
+    // Update answers in bulk
+    for (const ans of answers) {
+      const { questionId, choiceId, flagged, timeSpent } = ans;
+      await client.query(
+        `UPDATE um_user_answers
+         SET chosen_choice_id = $1,
+             is_flagged = $2,
+             time_spent_sec = COALESCE($3, time_spent_sec)
+         WHERE session_id = $4 AND question_id = $5`,
+        [choiceId || null, flagged || false, timeSpent || 0, sessionId, questionId]
+      );
+    }
+
+    // Fetch scoring config from the package
+    const pkgScoreRes = await client.query(
+      `SELECT tp.points_correct, tp.points_incorrect, tp.points_unanswered
+       FROM um_tryout_sessions ts
+       JOIN um_tryout_packages tp ON ts.package_id = tp.id
+       WHERE ts.id = $1`,
+      [sessionId]
+    );
+    const ptCorrect = pkgScoreRes.rows[0]?.points_correct ?? 4;
+    const ptIncorrect = pkgScoreRes.rows[0]?.points_incorrect ?? -1;
+    const ptUnanswered = pkgScoreRes.rows[0]?.points_unanswered ?? 0;
+
+    // Calculate score using custom scoring points
+    const correctnessRes = await client.query(
+      `SELECT ua.chosen_choice_id, COALESCE(ac.is_correct, false) as is_correct, ua.question_id
+       FROM um_user_answers ua
+       LEFT JOIN um_answer_choices ac ON ua.chosen_choice_id = ac.id
+       WHERE ua.session_id = $1`,
+      [sessionId]
+    );
+
+    const totalQuestions = correctnessRes.rows.length;
+    const correctCount = correctnessRes.rows.filter(r => r.is_correct).length;
+    const unansweredCount = correctnessRes.rows.filter(r => !r.chosen_choice_id).length;
+    const incorrectCount = totalQuestions - correctCount - unansweredCount;
+
+    // Calculate score using configurable points
+    const score = (correctCount * ptCorrect) + (incorrectCount * ptIncorrect) + (unansweredCount * ptUnanswered);
+
+    const scoreBreakdown = {
+      benar: correctCount,
+      salah: incorrectCount,
+      kosong: unansweredCount,
+      total: totalQuestions,
+      totalScore: score,
+      pointsCorrect: ptCorrect,
+      pointsIncorrect: ptIncorrect,
+      pointsUnanswered: ptUnanswered,
+      scoringMethod: `Custom (Benar: ${ptCorrect > 0 ? '+' : ''}${ptCorrect}, Salah: ${ptIncorrect > 0 ? '+' : ''}${ptIncorrect}, Kosong: ${ptUnanswered > 0 ? '+' : ''}${ptUnanswered})`
+    };
+
+    // Update session
+    await client.query(
+      `UPDATE um_tryout_sessions
+       SET submitted_at = NOW(),
+           total_score = $1,
+           score_breakdown = $2
+       WHERE id = $3`,
+      [score, JSON.stringify(scoreBreakdown), sessionId]
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true,
+      data: {
+        sessionId,
+        totalScore: score,
+        scoreBreakdown
+      },
+      message: 'Ujian Mandiri Tryout submitted successfully'
+    });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error submitting UM tryout bulk:', error);
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
+// Get Ujian Mandiri Tryout Session Result
+router.get('/tryout/result/:sessionId', verifyToken, async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user.id;
+
+    // Get session details
+    const sessionRes = await pool.query(
+      `SELECT ts.*, tp.title, tp.duration, um.nama_ujian as ujian_name, um.id as ujian_id
+       FROM um_tryout_sessions ts
+       JOIN um_tryout_packages tp ON ts.package_id = tp.id
+       JOIN ujian_mandiri um ON tp.ujian_id = um.id
+       WHERE ts.id = $1 AND ts.user_id = $2`,
+      [sessionId, userId]
+    );
+
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Hasil sesi tidak ditemukan atau tidak authorized' });
+    }
+
+    const session = sessionRes.rows[0];
+    if (!session.submitted_at) {
+      return res.status(400).json({ success: false, error: 'Sesi tryout ini belum disubmit' });
+    }
+
+    // Fetch questions, choices, correctness, and user answers
+    const questionsRes = await pool.query(
+      `SELECT q.id, q.content, q.image_url, q.difficulty,
+              ua.chosen_choice_id, ua.is_flagged, ua.time_spent_sec, ua.position,
+              (
+                SELECT json_agg(json_build_object(
+                  'id', ac.id,
+                  'label', ac.label,
+                  'content', ac.content,
+                  'is_correct', COALESCE(ac.is_correct, false),
+                  'explanation', ac.explanation
+                ) ORDER BY ac.label)
+                FROM um_answer_choices ac
+                WHERE ac.question_id = q.id
+              ) as choices
+       FROM um_user_answers ua
+       JOIN um_questions q ON ua.question_id = q.id
+       WHERE ua.session_id = $1
+       ORDER BY ua.position ASC`,
+      [sessionId]
+    );
+
+    // Format questions list
+    const questions = questionsRes.rows.map(q => {
+      const choices = Array.isArray(q.choices) ? q.choices : [];
+      const chosenChoice = choices.find(c => c.id === q.chosen_choice_id) || null;
+      const correctChoice = choices.find(c => c.is_correct) || null;
+
+      return {
+        id: q.id,
+        position: q.position,
+        content: q.content,
+        imageUrl: q.image_url,
+        difficulty: q.difficulty,
+        chosenChoiceId: q.chosen_choice_id,
+        userAnswer: chosenChoice ? chosenChoice.label : null,
+        correctAnswer: correctChoice ? correctChoice.label : null,
+        explanation: correctChoice ? correctChoice.explanation : null,
+        isCorrect: chosenChoice ? chosenChoice.is_correct : false,
+        isFlagged: q.is_flagged,
+        timeSpentSec: q.time_spent_sec || 0,
+        choices: choices
+      };
+    });
+
+    // Parse score breakdown
+    let scoreBreakdown = session.score_breakdown;
+    if (typeof scoreBreakdown === 'string') {
+      try { scoreBreakdown = JSON.parse(scoreBreakdown); } catch { scoreBreakdown = {}; }
+    }
+
+    // Calculate time spent
+    const totalTimeSpent = questions.reduce((sum, q) => sum + q.timeSpentSec, 0);
+
+    res.json({
+      success: true,
+      data: {
+        sessionId: session.id,
+        tryoutId: session.package_id,
+        ujianId: session.ujian_id,
+        tryoutName: session.title,
+        ujianName: session.ujian_name,
+        totalScore: session.total_score,
+        scoreBreakdown,
+        questions,
+        duration: session.duration || 60,
+        timeSpent: totalTimeSpent,
+        submittedAt: session.submitted_at
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching UM session result:', error);
+    next(error);
+  }
+});
+
+module.exports = router;
