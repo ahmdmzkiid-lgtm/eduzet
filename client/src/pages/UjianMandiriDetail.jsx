@@ -70,10 +70,10 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 )}
               </div>
             </div>
-            <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
+            <button type="button" onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">logout</span>
             </button>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
+            <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
               <span className="material-symbols-outlined text-[24px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
           </div>
@@ -84,7 +84,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
           <div className="absolute top-0 left-0 right-0 bg-white rounded-b-[32px] shadow-2xl p-6 pt-20 animate-slide-down" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-8">
               <Link to="/dashboard" className="flex items-center"><img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-8" /></Link>
-              <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
+              <button type="button" onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -105,7 +105,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                   <span className="text-[12px] font-bold uppercase text-[#727687]">{user?.current_plan || 'Gratis'}</span>
                 </div>
               </div>
-              <button onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
+              <button type="button" onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
                 <span className="material-symbols-outlined text-[18px]">logout</span> Keluar
               </button>
             </div>
@@ -313,6 +313,7 @@ export default function UjianMandiriDetail() {
                         <div className="flex flex-wrap gap-2">
                           {pkg.user_history.map((attempt, index) => (
                             <button
+                              type="button"
                               key={attempt.id}
                               onClick={() => navigate(`/ujian-mandiri/${ujian.id}/tryout/${pkg.id}/hasil/${attempt.id}`)}
                               className="inline-flex items-center gap-1.5 bg-white border border-[#c2c6d8] hover:border-[#0050cb] hover:text-[#0050cb] px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all"
@@ -327,6 +328,7 @@ export default function UjianMandiriDetail() {
                   </div>
                   <div className="shrink-0 flex flex-col gap-2 w-full md:w-auto">
                     <button
+                      type="button"
                       onClick={() => handleStartTryout(pkg)}
                       disabled={checkingRegistration !== false}
                       className="bg-[#0050cb] text-white px-6 lg:px-8 py-3 lg:py-4 rounded-lg font-bold text-[14px] hover:bg-[#003fa4] transition-all active:scale-95 whitespace-nowrap disabled:opacity-75 flex items-center justify-center gap-2 w-full"
@@ -342,6 +344,7 @@ export default function UjianMandiriDetail() {
                     </button>
                     {pkg.user_history?.length > 0 && (
                       <button
+                        type="button"
                         onClick={() => navigate(`/ujian-mandiri/${ujian.id}/tryout/${pkg.id}/hasil/${pkg.user_history[0].id}`)}
                         className="border border-[#0050cb] text-[#0050cb] hover:bg-[#0050cb]/5 px-6 lg:px-8 py-3 rounded-lg font-bold text-[14px] transition-all active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full"
                       >
@@ -439,6 +442,7 @@ export default function UjianMandiriDetail() {
                     </div>
                     {(lat.button_style || 'filled') === 'filled' ? (
                       <button
+                        type="button"
                         onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`)}
                         className="w-full bg-[#0050cb] text-white py-3 rounded-lg font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#003fa4] transition-colors mt-4"
                       >
@@ -446,6 +450,7 @@ export default function UjianMandiriDetail() {
                       </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`)}
                         className="w-full border-2 border-[#0050cb] text-[#0050cb] py-3 rounded-lg font-bold text-[14px] hover:bg-[#0050cb]/5 transition-colors mt-4"
                       >

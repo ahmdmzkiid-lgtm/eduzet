@@ -212,7 +212,7 @@ const TryoutSubtesSelect = () => {
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
             </div>
-            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
+            <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
               <span className="material-symbols-outlined text-[24px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
           </div>
@@ -225,7 +225,7 @@ const TryoutSubtesSelect = () => {
           <div className="absolute top-0 left-0 right-0 bg-white rounded-b-[32px] shadow-2xl p-6 pt-20 animate-slide-down" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-8">
               <Link to="/dashboard" className="flex items-center"><img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-8" /></Link>
-              <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
+              <button type="button" onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
                 <span className="material-symbols-outlined">close</span>
               </button>
             </div>
@@ -246,7 +246,7 @@ const TryoutSubtesSelect = () => {
                   <span className="text-[12px] font-bold uppercase text-[#727687]">{user?.current_plan || 'Gratis'}</span>
                 </div>
               </div>
-              <button onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
+              <button type="button" onClick={() => { setMobileMenuOpen(false); navigate('/'); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
                 <span className="material-symbols-outlined text-[18px]">logout</span> Keluar
               </button>
             </div>
@@ -375,6 +375,7 @@ const TryoutSubtesSelect = () => {
               {completedSubtests.size} / {subjects.length} selesai
             </span>
             <button
+              type="button"
               onClick={handleSubmitTryout}
               disabled={submitting || completedSubtests.size === 0}
               className={`px-6 sm:px-10 py-2.5 sm:py-3.5 rounded-xl font-bold text-[13px] sm:text-[14px] transition-all flex items-center gap-2 ${

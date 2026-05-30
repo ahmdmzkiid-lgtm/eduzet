@@ -221,6 +221,7 @@ const TryoutVerificationModal = ({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onClear();
@@ -256,6 +257,7 @@ const TryoutVerificationModal = ({
         {/* Header */}
         <div className="relative px-6 pt-6 pb-4" style={{ background: 'linear-gradient(135deg, #0050cb 0%, #3b82f6 50%, #6366f1 100%)' }}>
           <button
+            type="button"
             onClick={onClose}
             className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-all"
           >
@@ -535,6 +537,7 @@ const TryoutVerificationModal = ({
 
               {/* Submit Button */}
               <button
+                type="button"
                 onClick={handleSubmit}
                 disabled={isLoading || !followFile || !repostFile || !contactEmail.trim()}
                 className="w-full py-3.5 rounded-xl text-white font-semibold text-sm transition-all hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:active:scale-100 flex items-center justify-center gap-2"

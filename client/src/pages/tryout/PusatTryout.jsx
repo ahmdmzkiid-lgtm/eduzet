@@ -70,11 +70,11 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
               )}
             </div>
           </div>
-          <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
+          <button type="button" onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">logout</span>
           </button>
           {/* Hamburger for mobile */}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
+          <button type="button" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="lg:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
             <span className="material-symbols-outlined text-[24px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
           </button>
         </div>
@@ -85,7 +85,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
         <div className="absolute top-0 left-0 right-0 bg-white rounded-b-[32px] shadow-2xl p-6 pt-20 animate-slide-down" onClick={e => e.stopPropagation()}>
           <div className="flex items-center justify-between mb-8">
             <Link to="/dashboard" className="flex items-center"><img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-8" /></Link>
-            <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
+            <button type="button" onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
               <span className="material-symbols-outlined">close</span>
             </button>
           </div>
@@ -106,7 +106,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 <span className="text-[12px] font-bold uppercase text-[#727687]">{user?.current_plan || 'Gratis'}</span>
               </div>
             </div>
-            <button onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
+            <button type="button" onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
               <span className="material-symbols-outlined text-[18px]">logout</span> Keluar
             </button>
           </div>
@@ -379,7 +379,7 @@ const PusatTryout = () => {
                       <h4 className="font-semibold text-[16px] text-[#191b24] group-hover:text-[#0050cb] transition-colors">{schedule.title}</h4>
                       <p className="text-[12px] text-[#727687] mt-1">{time} • Online</p>
                     </div>
-                    <button className="text-[#0050cb] font-semibold text-[12px] px-4 py-2 border border-[#0050cb]/20 rounded-lg hover:bg-[#0050cb] hover:text-white transition-all shrink-0">
+                    <button type="button" className="text-[#0050cb] font-semibold text-[12px] px-4 py-2 border border-[#0050cb]/20 rounded-lg hover:bg-[#0050cb] hover:text-white transition-all shrink-0">
                       Ingatkan Saya
                     </button>
                   </div>
