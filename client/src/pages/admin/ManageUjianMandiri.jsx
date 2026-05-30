@@ -602,13 +602,13 @@ export default function ManageUjianMandiri() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <button onClick={() => openManageSoal('tryout', ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
+                            <button type="button" onClick={() => openManageSoal('tryout', ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
                               <span className="material-symbols-outlined text-[18px]">quiz</span>
                             </button>
-                            <button onClick={() => openTryoutModal(ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
+                            <button type="button" onClick={() => openTryoutModal(ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
                               <span className="material-symbols-outlined text-[18px]">edit</span>
                             </button>
-                            <button onClick={() => handleDeleteTryout(ujian.id, pkg.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
+                            <button type="button" onClick={() => handleDeleteTryout(ujian.id, pkg.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                           </div>
@@ -673,13 +673,13 @@ export default function ManageUjianMandiri() {
                             </div>
                           </div>
                           <div className="flex gap-1">
-                            <button onClick={() => openManageSoal('latihan', ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
+                            <button type="button" onClick={() => openManageSoal('latihan', ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
                               <span className="material-symbols-outlined text-[18px]">quiz</span>
                             </button>
-                            <button onClick={() => openLatihanModal(ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
+                            <button type="button" onClick={() => openLatihanModal(ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
                               <span className="material-symbols-outlined text-[18px]">edit</span>
                             </button>
-                            <button onClick={() => handleDeleteLatihan(ujian.id, lat.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
+                            <button type="button" onClick={() => handleDeleteLatihan(ujian.id, lat.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
                               <span className="material-symbols-outlined text-[18px]">delete</span>
                             </button>
                           </div>
@@ -778,7 +778,7 @@ export default function ManageUjianMandiri() {
               <h3 className="text-[20px] font-bold text-[#191b24]">
                 {editingItem ? 'Edit Ujian Mandiri' : 'Tambah Ujian Mandiri'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
+              <button type="button" onClick={() => setShowModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
@@ -864,7 +864,7 @@ export default function ManageUjianMandiri() {
               <h3 className="text-[20px] font-bold text-[#191b24]">
                 {editingTryout ? 'Edit Paket Tryout' : 'Tambah Paket Tryout'}
               </h3>
-              <button onClick={() => setShowTryoutModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
+              <button type="button" onClick={() => setShowTryoutModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
@@ -949,7 +949,7 @@ export default function ManageUjianMandiri() {
               <h3 className="text-[20px] font-bold text-[#191b24]">
                 {editingLatihan ? 'Edit Latihan Soal' : 'Tambah Latihan Soal'}
               </h3>
-              <button onClick={() => setShowLatihanModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
+              <button type="button" onClick={() => setShowLatihanModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
@@ -1037,7 +1037,7 @@ export default function ManageUjianMandiri() {
                   {managingItem.type === 'tryout' ? 'Paket Tryout' : 'Latihan Soal'} • {questions.length} soal
                 </p>
               </div>
-              <button onClick={closeManageSoal} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
+              <button type="button" onClick={closeManageSoal} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>
@@ -1228,7 +1228,7 @@ export default function ManageUjianMandiri() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 w-full max-w-2xl shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-[20px] font-bold text-[#191b24]">Edit Soal</h3>
-              <button onClick={() => setShowEditQuestionModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
+              <button type="button" onClick={() => setShowEditQuestionModal(false)} className="w-9 h-9 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656] hover:bg-[#e6e7f4]">
                 <span className="material-symbols-outlined text-[18px]">close</span>
               </button>
             </div>

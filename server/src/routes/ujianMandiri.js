@@ -143,6 +143,24 @@ router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file'
     };
 
     await client.query('BEGIN');
+    
+    // Get the current max display_order for this tryout package or latihan
+    let maxOrderRes;
+    if (tryout_package_id) {
+      maxOrderRes = await client.query(
+        'SELECT COALESCE(MAX(display_order), -1) as max_order FROM um_questions WHERE tryout_package_id = $1',
+        [tryout_package_id]
+      );
+    } else if (latihan_id) {
+      maxOrderRes = await client.query(
+        'SELECT COALESCE(MAX(display_order), -1) as max_order FROM um_questions WHERE latihan_id = $1',
+        [latihan_id]
+      );
+    } else {
+      maxOrderRes = { rows: [{ max_order: -1 }] };
+    }
+    
+    let nextDisplayOrder = (maxOrderRes.rows[0]?.max_order || -1) + 1;
     let imported = 0;
 
     for (const row of rows) {
@@ -161,9 +179,10 @@ router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file'
       const qRes = await client.query(
         `INSERT INTO um_questions (tryout_package_id, latihan_id, content, difficulty, display_order)
          VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [tryout_package_id || null, latihan_id || null, soal, difficulty || 'medium', imported]
+        [tryout_package_id || null, latihan_id || null, soal, difficulty || 'medium', nextDisplayOrder]
       );
       const qId = qRes.rows[0].id;
+      nextDisplayOrder++;
 
       const options = [
         { label: 'A', content: opsiA },

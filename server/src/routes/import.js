@@ -84,11 +84,19 @@ router.post('/excel', verifyToken, verifyAdmin, upload.single('file'), async (re
   try {
     await client.query('BEGIN');
 
-    // Get the current max display_order for this subject
-    const maxOrderRes = await client.query(
-      'SELECT COALESCE(MAX(display_order), 0) as max_order FROM questions WHERE subject_id = $1',
-      [subject_id]
-    );
+    // Get the current max display_order for this subject AND tryout package (if applicable)
+    let maxOrderRes;
+    if (destination === 'tryout' && tryout_package_id) {
+      maxOrderRes = await client.query(
+        'SELECT COALESCE(MAX(display_order), 0) as max_order FROM questions WHERE subject_id = $1 AND tryout_package_id = $2',
+        [subject_id, tryout_package_id]
+      );
+    } else {
+      maxOrderRes = await client.query(
+        'SELECT COALESCE(MAX(display_order), 0) as max_order FROM questions WHERE subject_id = $1 AND tryout_package_id IS NULL',
+        [subject_id]
+      );
+    }
     let nextDisplayOrder = (maxOrderRes.rows[0]?.max_order || 0) + 1;
 
     for (let i = 0; i < results.length; i++) {
