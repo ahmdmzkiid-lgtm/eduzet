@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
-import { ujianMandiriService } from '../../services/api';
+import { ujianMandiriService, soalService } from '../../services/api';
 import { STATUS_OPTIONS, getStatusConfig } from '../../data/ujianMandiriData';
 
 const DEFAULT_BANNER = {
@@ -399,15 +399,15 @@ export default function ManageUjianMandiri() {
     }
   };
 
-  const handleShuffleChoices = (questionId) => {
-    setQuestions(questions.map(q => {
-      if (q.id === questionId) {
-        const shuffled = [...(q.choices || [])].sort(() => Math.random() - 0.5);
-        return { ...q, choices: shuffled };
-      }
-      return q;
-    }));
-    toast.success('Jawaban berhasil diacak');
+  const handleShuffleChoices = async (questionId) => {
+    try {
+      await soalService.shuffleChoices(questionId);
+      toast.success('Jawaban berhasil diacak!');
+      // Reload questions to get shuffled choices from server
+      fetchQuestions();
+    } catch (err) {
+      toast.error('Gagal mengacak jawaban');
+    }
   };
 
   const handleDeleteAllQuestions = async () => {
