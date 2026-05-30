@@ -319,6 +319,57 @@ router.patch('/questions/:id', [verifyToken, verifyAdmin], async (req, res, next
   }
 });
 
+// Shuffle choices for a question (Admin Only)
+// Labels A,B,C,D,E stay fixed — only CONTENT + IS_CORRECT + EXPLANATION are shuffled
+router.post('/questions/shuffle/:questionId', verifyToken, verifyAdmin, async (req, res, next) => {
+  const { questionId } = req.params;
+
+  if (!questionId) {
+    return res.status(400).json({ success: false, error: 'questionId diperlukan' });
+  }
+
+  try {
+    // Get all choices ordered by label (A,B,C,D,E) — order stays intact
+    const choicesResult = await pool.query(
+      'SELECT * FROM um_answer_choices WHERE question_id = $1 ORDER BY label ASC',
+      [questionId]
+    );
+
+    if (choicesResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Tidak ada pilihan jawaban' });
+    }
+
+    const choices = choicesResult.rows;
+
+    // Extract only the DATA fields (content, is_correct, explanation) — NOT the labels
+    let dataSlots = choices.map(c => ({
+      content: c.content,
+      is_correct: c.is_correct,
+      explanation: c.explanation,
+    }));
+
+    // Fisher-Yates shuffle on the data slots only
+    for (let i = dataSlots.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [dataSlots[i], dataSlots[j]] = [dataSlots[j], dataSlots[i]];
+    }
+
+    // Write shuffled data back — each choice KEEPS its original id & label,
+    // but gets the new content/is_correct/explanation
+    for (let i = 0; i < choices.length; i++) {
+      await pool.query(
+        'UPDATE um_answer_choices SET content = $1, is_correct = $2, explanation = $3 WHERE id = $4',
+        [dataSlots[i].content, dataSlots[i].is_correct, dataSlots[i].explanation, choices[i].id]
+      );
+    }
+
+    res.json({ success: true, message: 'Jawaban berhasil diacak. Urutan A-E tetap, isi jawaban yang berpindah.' });
+  } catch (error) {
+    console.error('Error shuffling choices:', error);
+    next(error);
+  }
+});
+
 // Delete a question
 router.delete('/questions/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
   try {

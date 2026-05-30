@@ -401,7 +401,7 @@ export default function ManageUjianMandiri() {
 
   const handleShuffleChoices = async (questionId) => {
     try {
-      await soalService.shuffleChoices(questionId);
+      await ujianMandiriService.shuffleChoices(questionId);
       toast.success('Jawaban berhasil diacak!');
       // Reload questions to get shuffled choices from server
       fetchQuestions();
@@ -1169,6 +1169,7 @@ export default function ManageUjianMandiri() {
                             <span className="material-symbols-outlined text-[18px]">edit</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); handleShuffleChoices(q.id); }}
                             className="p-1.5 text-[#727687] hover:text-[#0050cb] hover:bg-[#dae1ff]/30 rounded-lg transition-colors"
                             title="Acak Jawaban"
@@ -1176,6 +1177,7 @@ export default function ManageUjianMandiri() {
                             <span className="material-symbols-outlined text-[18px]">shuffle</span>
                           </button>
                           <button
+                            type="button"
                             onClick={(e) => { e.stopPropagation(); handleDeleteQuestion(q.id); }}
                             className="p-1.5 text-[#727687] hover:text-[#ba1a1a] hover:bg-[#ffdad6]/30 rounded-lg transition-colors"
                             title="Hapus"

@@ -159,6 +159,7 @@ export const ujianMandiriService = {
   updateQuestion: (id, data) => api.patch(`/ujian-mandiri/questions/${id}`, data),
   deleteQuestion: (id) => api.delete(`/ujian-mandiri/questions/${id}`),
   deleteAllQuestions: (data) => api.delete('/ujian-mandiri/questions/bulk', { data }),
+  shuffleChoices: (questionId) => api.post(`/ujian-mandiri/questions/shuffle/${questionId}`),
   importExcel: (formData) => api.post('/ujian-mandiri/questions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
