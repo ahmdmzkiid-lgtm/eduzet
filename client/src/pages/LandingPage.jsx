@@ -274,10 +274,10 @@ const LandingPage = () => {
             <p>Platform persiapan UTBK terbaik untuk raih PTN impianmu.</p>
           </div>
           <div className="footer-links">
-            <a href="#">Syarat & Ketentuan</a>
-            <a href="#">Kebijakan Privasi</a>
-            <a href="mailto:ahmadmuzaki.id@gmail.com">Hubungi Kami</a>
-            <a href="#">Karir</a>
+            <button onClick={() => navigate('/terms-and-conditions')} className="cursor-pointer hover:text-[#0050cb] transition">Syarat & Ketentuan</button>
+            <button onClick={() => navigate('/privacy-policy')} className="cursor-pointer hover:text-[#0050cb] transition">Kebijakan Privasi</button>
+            <button onClick={() => navigate('/contact-us')} className="cursor-pointer hover:text-[#0050cb] transition">Hubungi Kami</button>
+            <button onClick={() => navigate('/careers')} className="cursor-pointer hover:text-[#0050cb] transition">Karir</button>
           </div>
           <div className="footer-copy">© 2026 Eduzet. All rights reserved.</div>
         </div>

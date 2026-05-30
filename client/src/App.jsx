@@ -44,6 +44,10 @@ import LatihanSoalUM from './pages/LatihanSoalUM';
 import LatihanSoalUMResult from './pages/LatihanSoalUMResult';
 import TryoutSessionUM from './pages/TryoutSessionUM';
 import TryoutUMResult from './pages/TryoutUMResult';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsAndConditions from './pages/TermsAndConditions';
+import ContactUs from './pages/ContactUs';
+import Careers from './pages/Careers';
 
 
 function App() {
@@ -57,6 +61,10 @@ function App() {
           {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
+          <Route path="/contact-us" element={<ContactUs />} />
+          <Route path="/careers" element={<Careers />} />
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
