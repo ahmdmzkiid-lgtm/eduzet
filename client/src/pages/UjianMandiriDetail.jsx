@@ -496,7 +496,10 @@ export default function UjianMandiriDetail() {
             setHasConfirmedStart(true);
             setShowVerificationModal(false);
             if (selectedPkg) {
-              navigate(`/ujian-mandiri/${id}/tryout/${selectedPkg.id}`);
+              // Use setTimeout to ensure modal closes before navigation
+              setTimeout(() => {
+                navigate(`/ujian-mandiri/${id}/tryout/${selectedPkg.id}`);
+              }, 100);
             }
           }}
         />
