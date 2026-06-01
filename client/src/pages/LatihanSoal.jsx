@@ -268,12 +268,14 @@ function SubjectGrid({ subjects, user, navigate }) {
       return idx >= 0 ? idx : 999;
     };
 
-    return [...subjects].sort((a, b) => {
-      const planA = PLAN_RANK[a.required_plan || 'gratis'] ?? 0;
-      const planB = PLAN_RANK[b.required_plan || 'gratis'] ?? 0;
-      if (planA !== planB) return planA - planB;
-      return getSubjectOrder(a) - getSubjectOrder(b);
-    });
+    return [...subjects]
+      .filter(s => s.is_active !== false)
+      .sort((a, b) => {
+        const planA = PLAN_RANK[a.required_plan || 'gratis'] ?? 0;
+        const planB = PLAN_RANK[b.required_plan || 'gratis'] ?? 0;
+        if (planA !== planB) return planA - planB;
+        return getSubjectOrder(a) - getSubjectOrder(b);
+      });
   }, [subjects]);
 
   const gratisSubjects = sortedSubjects.filter(s => (s.required_plan || 'gratis') === 'gratis');
@@ -283,6 +285,10 @@ function SubjectGrid({ subjects, user, navigate }) {
   const handleClick = (subject) => {
     const reqPlan = subject.required_plan || 'gratis';
     const reqRank = PLAN_RANK[reqPlan] ?? 0;
+    if (subject.is_active === false) {
+      toast.error('Latihan sedang non-aktif.');
+      return;
+    }
     if (reqRank > userRank) {
       toast.error(`Latihan ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}. Upgrade paketmu di halaman Harga.`);
       return;

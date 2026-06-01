@@ -143,8 +143,22 @@ export default function UjianMandiriDetail() {
     }
   };
 
+  const userPlan = user?.current_plan || 'gratis';
+  const userRank = PLAN_RANK[userPlan] ?? 0;
+
   const handleStartTryout = async (pkg) => {
-    if (user?.current_plan === 'gratis') {
+    const reqPlan = pkg.required_plan || 'gratis';
+    const reqRank = PLAN_RANK[reqPlan] ?? 0;
+    if (pkg.is_active === false) {
+      toast.error('Tryout sedang non-aktif.');
+      return;
+    }
+    if (reqRank > userRank) {
+      toast.error(`Tryout ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
+      return;
+    }
+
+    if (userPlan === 'gratis') {
       setSelectedPkg(pkg);
       setCheckingRegistration(pkg.id);
       try {
@@ -180,8 +194,10 @@ export default function UjianMandiriDetail() {
           return;
         }
         setUjian(ujianRes.data.data);
-        setTryoutPackages(tryoutRes.data.data || []);
-        setLatihanSoal(latihanRes.data.data || []);
+        const pkgList = (tryoutRes.data.data || []).filter(p => p.is_active !== false);
+        const latList = (latihanRes.data.data || []).filter(l => l.is_active !== false);
+        setTryoutPackages(pkgList);
+        setLatihanSoal(latList);
       } catch (err) {
         console.error('Failed to fetch ujian mandiri detail:', err);
         navigate('/ujian-mandiri');
@@ -371,10 +387,31 @@ export default function UjianMandiriDetail() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
             {latihanSoal.length > 0 ? (
-              latihanSoal.map((lat) => (
+              latihanSoal.map((lat) => {
+                const reqPlan = lat.required_plan || 'gratis';
+                const reqRank = PLAN_RANK[reqPlan] ?? 0;
+                const locked = reqRank > userRank;
+                const inactive = lat.is_active === false;
+
+                const handleLatihanClick = () => {
+                  if (inactive) {
+                    toast.error('Latihan sedang non-aktif.');
+                    return;
+                  }
+                  if (locked) {
+                    toast.error(`Latihan ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
+                    return;
+                  }
+                  navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`);
+                };
+
+                return (
                 <div
                   key={lat.id}
                   className="group bg-white rounded-xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1 border border-[#e5e2e3] shadow-sm hover:shadow-lg"
+                  onClick={handleLatihanClick}
+                  role="button"
+                  tabIndex={0}
                 >
                   <div className="p-6 pb-0">
                     <div className="flex justify-between items-start">
@@ -389,12 +426,26 @@ export default function UjianMandiriDetail() {
                           {lat.icon}
                         </span>
                       </div>
-                      {lat.user_history?.length > 0 && (
-                        <span className="inline-flex items-center gap-1 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                          <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                          Selesai
-                        </span>
-                      )}
+                      <div className="flex flex-wrap gap-2 justify-end">
+                        {lat.user_history?.length > 0 && (
+                          <span className="inline-flex items-center gap-1 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                            Selesai
+                          </span>
+                        )}
+                        {inactive && (
+                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            <span className="material-symbols-outlined text-[14px]">visibility_off</span>
+                            Non-aktif
+                          </span>
+                        )}
+                        {!inactive && locked && (
+                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            <span className="material-symbols-outlined text-[14px]">lock</span>
+                            {reqPlan === 'sultan' ? 'Sultan' : 'Premium'}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="p-6 flex flex-col flex-grow justify-between">
@@ -443,16 +494,18 @@ export default function UjianMandiriDetail() {
                     {(lat.button_style || 'filled') === 'filled' ? (
                       <button
                         type="button"
-                        onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`)}
-                        className="w-full bg-[#0050cb] text-white py-3 rounded-lg font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#003fa4] transition-colors mt-4"
+                        onClick={(e) => { e.stopPropagation(); handleLatihanClick(); }}
+                        disabled={inactive || locked}
+                        className={`w-full py-3 rounded-lg font-bold text-[14px] flex items-center justify-center gap-2 transition-colors mt-4 ${inactive || locked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'}`}
                       >
                         {lat.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Latihan'} <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
                       </button>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`)}
-                        className="w-full border-2 border-[#0050cb] text-[#0050cb] py-3 rounded-lg font-bold text-[14px] hover:bg-[#0050cb]/5 transition-colors mt-4"
+                        onClick={(e) => { e.stopPropagation(); handleLatihanClick(); }}
+                        disabled={inactive || locked}
+                        className={`w-full border-2 py-3 rounded-lg font-bold text-[14px] transition-colors mt-4 flex items-center justify-center gap-2 ${inactive || locked ? 'border-gray-200 text-gray-500 cursor-not-allowed' : 'border-[#0050cb] text-[#0050cb] hover:bg-[#0050cb]/5'}`}
                       >
                         {lat.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Latihan'}
                       </button>
@@ -460,7 +513,7 @@ export default function UjianMandiriDetail() {
                     {lat.user_history?.length > 0 && (
                       <button
                         type="button"
-                        onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lat.user_history[0].id}`)}
+                        onClick={(e) => { e.stopPropagation(); navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lat.user_history[0].id}`); }}
                         className="w-full border border-[#0050cb] text-[#0050cb] py-3 rounded-lg font-bold text-[14px] mt-2 flex items-center justify-center gap-2 hover:bg-[#0050cb]/5 transition-colors"
                       >
                         <span className="material-symbols-outlined text-[16px]">visibility</span>
@@ -469,7 +522,8 @@ export default function UjianMandiriDetail() {
                     )}
                   </div>
                 </div>
-              ))
+                );
+              })
             ) : (
               <div className="col-span-full text-center py-16 bg-white rounded-xl border border-[#e5e2e3]">
                 <span className="material-symbols-outlined text-[48px] text-[#c2c6d8] mb-2">menu_book</span>

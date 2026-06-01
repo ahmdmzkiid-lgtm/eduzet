@@ -17,11 +17,11 @@ router.get('/', verifyToken, async (req, res, next) => {
 
 // Create subject
 router.post('/', [verifyToken, verifyAdmin], async (req, res, next) => {
-  const { title, description, icon, bgColor, iconColor, requiredPlan } = req.body;
+  const { title, description, icon, bgColor, iconColor, requiredPlan, is_active } = req.body;
   try {
     const result = await pool.query(
-      'INSERT INTO subjects (name, title, description, icon, bg_color, icon_color, category, required_plan) VALUES ($1, $1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [title, description, icon, bgColor, iconColor, 'TPS', requiredPlan || 'gratis']
+      'INSERT INTO subjects (name, title, description, icon, bg_color, icon_color, category, required_plan, is_active) VALUES ($1, $1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+      [title, description, icon, bgColor, iconColor, 'TPS', requiredPlan || 'gratis', is_active ?? true]
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
@@ -32,11 +32,11 @@ router.post('/', [verifyToken, verifyAdmin], async (req, res, next) => {
 // Update subject
 router.patch('/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
   const { id } = req.params;
-  const { title, description, icon, bgColor, iconColor, requiredPlan } = req.body;
+  const { title, description, icon, bgColor, iconColor, requiredPlan, is_active } = req.body;
   try {
     const result = await pool.query(
-      'UPDATE subjects SET title = $1, name = $1, description = $2, icon = $3, bg_color = $4, icon_color = $5, required_plan = $6 WHERE id = $7 RETURNING *',
-      [title, description, icon, bgColor, iconColor, requiredPlan || 'gratis', id]
+      'UPDATE subjects SET title = $1, name = $1, description = $2, icon = $3, bg_color = $4, icon_color = $5, required_plan = $6, is_active = COALESCE($7, is_active) WHERE id = $8 RETURNING *',
+      [title, description, icon, bgColor, iconColor, requiredPlan || 'gratis', is_active, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Subject not found' });
     res.json({ success: true, data: result.rows[0] });

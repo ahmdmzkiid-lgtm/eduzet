@@ -103,6 +103,7 @@ const ManageTryout = () => {
         title: pkg.title || '',
         scheduled_at: dateStr,
         is_public: !!pkg.is_public,
+        is_active: pkg.is_active !== undefined ? pkg.is_active : true,
         required_plan: pkg.required_plan || 'gratis',
         subject_config: ensureArray(pkg.subject_config)
       });
@@ -117,6 +118,7 @@ const ManageTryout = () => {
         title: '',
         scheduled_at: '',
         is_public: true,
+        is_active: true,
         required_plan: 'gratis',
         subject_config: initialConfig
       });
@@ -720,6 +722,18 @@ const ManageTryout = () => {
                     </div>
                     <p className="text-[12px] text-[#727687] mt-2">User harus punya paket ini untuk bisa ikut tryout.</p>
                   </div>
+                  <label className="flex items-center gap-3 cursor-pointer p-6 bg-white rounded-[32px] border border-[#c2c6d8]/20 shadow-sm w-full group hover:border-[#0050cb] transition-all">
+                    <input
+                      type="checkbox"
+                      className="w-6 h-6 rounded-md border-[#c2c6d8] text-[#0050cb] focus:ring-[#0050cb]"
+                      checked={!!formData.is_active}
+                      onChange={e => setFormData({...formData, is_active: e.target.checked})}
+                    />
+                    <div>
+                      <span className="text-[18px] font-bold text-[#191b24] group-hover:text-[#0050cb] transition-colors">Aktifkan Paket</span>
+                      <p className="text-[12px] text-[#727687]">Nonaktifkan untuk menyembunyikan paket dari pengguna.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

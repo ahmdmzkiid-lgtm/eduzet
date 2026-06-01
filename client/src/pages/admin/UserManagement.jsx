@@ -45,6 +45,10 @@ const UserManagement = () => {
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'student' | 'admin'
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [detailUser, setDetailUser] = useState(null);
+  const [editUser, setEditUser] = useState(null);
+  const [editRole, setEditRole] = useState('student');
+  const [updatingRole, setUpdatingRole] = useState(false);
 
   const fetchUsers = useCallback(async (page = 1) => {
     setLoading(true);
@@ -80,6 +84,7 @@ const UserManagement = () => {
   };
 
   const handleRoleChange = async (userId, newRole) => {
+    setUpdatingRole(true);
     try {
       await adminService.updateUserRole(userId, newRole);
       toast.success('Role berhasil diubah');
@@ -87,6 +92,8 @@ const UserManagement = () => {
     } catch (err) {
       toast.error('Gagal mengubah role pengguna. Periksa koneksi server.');
       console.error(err);
+    } finally {
+      setUpdatingRole(false);
     }
   };
 
@@ -304,10 +311,21 @@ const UserManagement = () => {
                           <span className="material-symbols-outlined">manage_accounts</span>
                         </button>
                       )}
-                      <button className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full transition-colors">
+                      <button
+                        onClick={() => {
+                          setEditUser(u);
+                          setEditRole(u.role || 'student');
+                        }}
+                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full transition-colors"
+                        title="Edit Role"
+                      >
                         <span className="material-symbols-outlined">edit</span>
                       </button>
-                      <button className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full transition-colors">
+                      <button
+                        onClick={() => setDetailUser(u)}
+                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full transition-colors"
+                        title="Lihat Detail"
+                      >
                         <span className="material-symbols-outlined">visibility</span>
                       </button>
                     </div>
@@ -414,6 +432,132 @@ const UserManagement = () => {
           </div>
         </div>
       </footer>
+
+      {/* Detail Modal */}
+      {detailUser && (
+        <div className="fixed inset-0 z-[120] bg-black/50 backdrop-blur-sm flex items-center justify-center px-4" onClick={() => setDetailUser(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-[20px] font-bold text-[#191b24]">Detail Pengguna</h3>
+                <p className="text-[13px] text-[#727687]">Lihat informasi ringkas user.</p>
+              </div>
+              <button onClick={() => setDetailUser(null)} className="w-10 h-10 rounded-full hover:bg-[#ecedfa] flex items-center justify-center text-[#424656]">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm">
+                  {detailUser.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div>
+                  <p className="text-[15px] font-semibold text-[#191b24]">{detailUser.name}</p>
+                  <p className="text-[13px] text-[#727687]">{detailUser.email}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[13px] text-[#424656]">
+                <div className="p-3 bg-[#f7f8fb] rounded-xl">
+                  <p className="text-[#727687] text-[12px]">Role</p>
+                  <p className="font-semibold capitalize">{detailUser.role}</p>
+                </div>
+                <div className="p-3 bg-[#f7f8fb] rounded-xl">
+                  <p className="text-[#727687] text-[12px]">Plan</p>
+                  <p className="font-semibold capitalize">{detailUser.current_plan || 'gratis'}</p>
+                </div>
+                <div className="p-3 bg-[#f7f8fb] rounded-xl">
+                  <p className="text-[#727687] text-[12px]">Bergabung</p>
+                  <p className="font-semibold">{detailUser.created_at ? new Date(detailUser.created_at).toLocaleString('id-ID') : '—'}</p>
+                </div>
+                <div className="p-3 bg-[#f7f8fb] rounded-xl">
+                  <p className="text-[#727687] text-[12px]">Status</p>
+                  <p className="font-semibold text-secondary">Aktif</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => setDetailUser(null)}
+                className="px-5 py-2 rounded-xl border border-[#c2c6d8] text-[#424656] hover:bg-[#ecedfa] font-semibold text-[13px]"
+              >
+                Tutup
+              </button>
+              {detailUser.id !== currentUser?.id && (
+                <button
+                  onClick={() => {
+                    setEditUser(detailUser);
+                    setEditRole(detailUser.role || 'student');
+                    setDetailUser(null);
+                  }}
+                  className="px-5 py-2 rounded-xl bg-[#0050cb] text-white hover:bg-[#003da6] font-semibold text-[13px]"
+                >
+                  Edit Role
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Role Modal */}
+      {editUser && (
+        <div className="fixed inset-0 z-[130] bg-black/50 backdrop-blur-sm flex items-center justify-center px-4" onClick={() => !updatingRole && setEditUser(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-[20px] font-bold text-[#191b24]">Ubah Role</h3>
+                <p className="text-[13px] text-[#727687]">Pilih role baru untuk pengguna ini.</p>
+              </div>
+              <button onClick={() => !updatingRole && setEditUser(null)} className="w-10 h-10 rounded-full hover:bg-[#ecedfa] flex items-center justify-center text-[#424656]" disabled={updatingRole}>
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="p-3 bg-[#f7f8fb] rounded-xl text-[14px] text-[#191b24]">
+                <p className="font-semibold">{editUser.name}</p>
+                <p className="text-[12px] text-[#727687]">{editUser.email}</p>
+              </div>
+              <div className="flex flex-col gap-2 text-[13px] text-[#424656]">
+                <label className="font-semibold text-[#191b24]">Role</label>
+                <select
+                  value={editRole}
+                  onChange={(e) => setEditRole(e.target.value)}
+                  className="border border-[#c2c6d8] rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#0050cb]"
+                  disabled={updatingRole}
+                >
+                  <option value="student">Student</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => !updatingRole && setEditUser(null)}
+                className="px-5 py-2 rounded-xl border border-[#c2c6d8] text-[#424656] hover:bg-[#ecedfa] font-semibold text-[13px]"
+                disabled={updatingRole}
+              >
+                Batal
+              </button>
+              <button
+                onClick={async () => {
+                  if (editUser.id === currentUser?.id) {
+                    toast.error('Tidak bisa mengubah role akun sendiri.');
+                    return;
+                  }
+                  await handleRoleChange(editUser.id, editRole);
+                  setEditUser(null);
+                }}
+                className="px-5 py-2 rounded-xl bg-[#0050cb] text-white hover:bg-[#003da6] font-semibold text-[13px] disabled:opacity-60"
+                disabled={updatingRole}
+              >
+                {updatingRole ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

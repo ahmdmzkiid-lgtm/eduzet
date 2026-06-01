@@ -161,17 +161,27 @@ const PusatTryout = () => {
     }).catch(() => {});
   }, []);
 
-  const handleStartTryout = (packageId) => {
-    navigate(`/tryout/select/${packageId}`);
+  const handleStartTryout = (pkg) => {
+    const reqPlan = pkg.required_plan || 'gratis';
+    const reqRank = PLAN_RANK[reqPlan] ?? 0;
+    if (reqRank > userRank) {
+      toast.error(`Tryout ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
+      return;
+    }
+    if (pkg.is_active === false) {
+      toast.error('Tryout sedang non-aktif.');
+      return;
+    }
+    navigate(`/tryout/select/${pkg.id}`);
   };
 
   const userPlan = user?.current_plan || 'gratis';
   const userRank = PLAN_RANK[userPlan] ?? 0;
 
   const filteredPackages = useMemo(() => {
-    const filtered = packages.filter(p =>
-      p.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filtered = packages
+      .filter(p => p.is_active !== false)
+      .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()));
     return filtered.sort((a, b) => {
       const planA = PLAN_RANK[a.required_plan || 'gratis'] ?? 0;
       const planB = PLAN_RANK[b.required_plan || 'gratis'] ?? 0;
@@ -264,7 +274,7 @@ const PusatTryout = () => {
                       if (isLocked) {
                         toast.error(`Tryout ini khusus paket ${planLabel}. Upgrade paketmu untuk akses.`);
                       } else {
-                        handleStartTryout(pkg.id);
+                        handleStartTryout(pkg);
                       }
                     }}
                     className={`relative bg-white border rounded-2xl overflow-hidden transition-all ${

@@ -34,6 +34,8 @@ const emptyTryoutPackage = {
   points_correct: 4,
   points_incorrect: -1,
   points_unanswered: 0,
+  is_active: true,
+  required_plan: 'gratis',
 };
 
 const emptyLatihan = {
@@ -47,11 +49,19 @@ const emptyLatihan = {
   points_correct: 4,
   points_incorrect: -1,
   points_unanswered: 0,
+  is_active: true,
+  required_plan: 'gratis',
 };
 
 const ICON_OPTIONS = [
   'auto_stories', 'science', 'public', 'psychology', 'edit_note', 
   'calculate', 'menu_book', 'history_edu', 'school', 'quiz'
+];
+
+const PLAN_OPTIONS = [
+  { value: 'gratis', label: 'Gratis', icon: 'redeem' },
+  { value: 'premium', label: 'Premium', icon: 'diamond' },
+  { value: 'sultan', label: 'Sultan', icon: 'stars' },
 ];
 
 export default function ManageUjianMandiri() {
@@ -208,7 +218,7 @@ export default function ManageUjianMandiri() {
     setSelectedUjianId(ujianId);
     if (pkg) {
       setEditingTryout(pkg);
-      setTryoutForm({ ...pkg });
+      setTryoutForm({ ...emptyTryoutPackage, ...pkg });
     } else {
       setEditingTryout(null);
       setTryoutForm({ ...emptyTryoutPackage });
@@ -253,7 +263,7 @@ export default function ManageUjianMandiri() {
     setSelectedUjianId(ujianId);
     if (lat) {
       setEditingLatihan(lat);
-      setLatihanForm({ ...lat });
+      setLatihanForm({ ...emptyLatihan, ...lat });
     } else {
       setEditingLatihan(null);
       setLatihanForm({ ...emptyLatihan });
@@ -878,6 +888,35 @@ export default function ManageUjianMandiri() {
                 <label className={labelCls}>Deskripsi</label>
                 <textarea className={inputCls + ' min-h-[80px] resize-y'} value={tryoutForm.description} onChange={(e) => setTryoutForm({ ...tryoutForm, description: e.target.value })} placeholder="Fokus pada Matematika Dasar, Bahasa Indonesia, dan Bahasa Inggris." />
               </div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 rounded border-[#c2c6d8] text-[#0050cb]"
+                  checked={!!tryoutForm.is_active}
+                  onChange={(e) => setTryoutForm({ ...tryoutForm, is_active: e.target.checked })}
+                />
+                <span className="text-[14px] font-bold text-[#191b24]">Aktifkan paket</span>
+              </label>
+              <div>
+                <label className={labelCls}>Akses Minimum</label>
+                <div className="flex gap-3 flex-wrap">
+                  {PLAN_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setTryoutForm({ ...tryoutForm, required_plan: opt.value })}
+                      className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-[13px] border-2 transition-all flex items-center justify-center gap-2 ${
+                        tryoutForm.required_plan === opt.value
+                          ? 'border-[#0050cb] bg-[#dae1ff] text-[#0050cb]'
+                          : 'border-[#c2c6d8]/30 bg-[#f2f3ff] text-[#727687] hover:border-[#c2c6d8]'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">{opt.icon}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={labelCls}>Icon</label>
@@ -966,6 +1005,35 @@ export default function ManageUjianMandiri() {
               <div>
                 <label className={labelCls}>Deskripsi</label>
                 <textarea className={inputCls + ' min-h-[80px] resize-y'} value={latihanForm.description} onChange={(e) => setLatihanForm({ ...latihanForm, description: e.target.value })} placeholder="Matematika Dasar, Bahasa Indonesia, & Bahasa Inggris foundation." />
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 rounded border-[#c2c6d8] text-[#0050cb]"
+                  checked={!!latihanForm.is_active}
+                  onChange={(e) => setLatihanForm({ ...latihanForm, is_active: e.target.checked })}
+                />
+                <span className="text-[14px] font-bold text-[#191b24]">Aktifkan latihan</span>
+              </label>
+              <div>
+                <label className={labelCls}>Akses Minimum</label>
+                <div className="flex gap-3 flex-wrap">
+                  {PLAN_OPTIONS.map(opt => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLatihanForm({ ...latihanForm, required_plan: opt.value })}
+                      className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-[13px] border-2 transition-all flex items-center justify-center gap-2 ${
+                        latihanForm.required_plan === opt.value
+                          ? 'border-[#0050cb] bg-[#dae1ff] text-[#0050cb]'
+                          : 'border-[#c2c6d8]/30 bg-[#f2f3ff] text-[#727687] hover:border-[#c2c6d8]'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[16px]">{opt.icon}</span>
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

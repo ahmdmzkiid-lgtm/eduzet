@@ -83,6 +83,12 @@ export const adminService = {
   updateUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
   getTryoutRegistrations: (params) => api.get('/admin/tryout-registrations', { params }),
   updateTryoutRegistration: (id, data) => api.patch(`/admin/tryout-registrations/${id}`, data),
+  getActivity: (params) => api.get('/admin/activity', { params }),
+  streamActivity: (token) => {
+    const url = new URL((import.meta.env.VITE_API_URL || 'http://localhost:3001/api') + '/admin/activity/stream');
+    if (token) url.searchParams.set('token', token);
+    return new EventSource(url.toString());
+  },
 };
 
 export const subjectService = {

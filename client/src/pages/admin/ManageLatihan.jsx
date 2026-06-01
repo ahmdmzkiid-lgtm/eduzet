@@ -44,7 +44,8 @@ const ManageLatihan = () => {
     icon: 'calculate',
     bgColor: '#dae1ff',
     iconColor: '#0050cb',
-    requiredPlan: 'gratis'
+    requiredPlan: 'gratis',
+    is_active: true,
   });
 
   const [topicForm, setTopicForm] = useState({
@@ -285,7 +286,8 @@ const ManageLatihan = () => {
         icon: item.icon || 'calculate',
         bgColor: item.bg_color || '#dae1ff',
         iconColor: item.icon_color || '#0050cb',
-        requiredPlan: item.required_plan || 'gratis'
+        requiredPlan: item.required_plan || 'gratis',
+        is_active: item.is_active !== undefined ? item.is_active : true,
       });
     } else {
       setEditingItem(null);
@@ -295,7 +297,8 @@ const ManageLatihan = () => {
         icon: 'calculate',
         bgColor: '#dae1ff',
         iconColor: '#0050cb',
-        requiredPlan: 'gratis'
+        requiredPlan: 'gratis',
+        is_active: true,
       });
     }
     setShowSubjectModal(true);
@@ -780,6 +783,15 @@ const ManageLatihan = () => {
                     placeholder="Deskripsi singkat untuk siswa..."
                   />
                 </div>
+                <label className="flex items-center gap-3 text-[14px] font-bold text-[#191b24] cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-[#c2c6d8] text-[#0050cb]"
+                    checked={!!subjectForm.is_active}
+                    onChange={e => setSubjectForm({...subjectForm, is_active: e.target.checked})}
+                  />
+                  Aktifkan subtes
+                </label>
                 <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-[14px] font-bold text-[#191b24] mb-2">Warna Ikon (Hex)</label>

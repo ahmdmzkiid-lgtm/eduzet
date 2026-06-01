@@ -1,7 +1,132 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
 const { verifyToken, verifyAdmin } = require('../middleware/auth');
+
+const decodeTokenFromRequest = (req) => {
+  try {
+    let token = null;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+      token = req.headers.authorization.split(' ')[1];
+    } else if (req.query.token) {
+      token = req.query.token;
+    }
+    if (!token) return null;
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return null;
+  }
+};
+
+const ensureAdminFromAny = (req, res, next) => {
+  const decoded = decodeTokenFromRequest(req);
+  if (!decoded) {
+    return res.status(401).json({ success: false, error: 'Access denied. No token provided.' });
+  }
+  if (decoded.role !== 'admin') {
+    return res.status(403).json({ success: false, error: 'Access denied. Admin role required.' });
+  }
+  req.user = decoded;
+  next();
+};
+
+const fetchRecentActivities = async (limit = 50, offset = 0) => {
+  const safeLimit = Math.max(parseInt(limit, 10) || 50, 1);
+  const safeOffset = Math.max(parseInt(offset, 10) || 0, 0);
+  const fetchLimit = Math.min(safeLimit + safeOffset + 20, 500); // grab a bit extra to cover pagination window
+
+  const [tryoutRes, umTryoutRes, latihanRes, userRes, counts] = await Promise.all([
+    pool.query(
+      `SELECT ts.id as ref_id, u.id as user_id, u.name, u.email, 'tryout_submit' as action, 'utbk_tryout' as source,
+              COALESCE(ts.submitted_at, ts.started_at, NOW()) as timestamp,
+              ts.package_id, ts.total_score
+       FROM tryout_sessions ts
+       JOIN users u ON u.id = ts.user_id
+       ORDER BY timestamp DESC
+       LIMIT $1`,
+      [fetchLimit]
+    ),
+    pool.query(
+      `SELECT ts.id as ref_id, u.id as user_id, u.name, u.email, 'um_tryout_submit' as action, 'um_tryout' as source,
+              COALESCE(ts.submitted_at, ts.started_at, NOW()) as timestamp,
+              ts.package_id, ts.total_score
+       FROM um_tryout_sessions ts
+       JOIN users u ON u.id = ts.user_id
+       ORDER BY timestamp DESC
+       LIMIT $1`,
+      [fetchLimit]
+    ),
+    pool.query(
+      `SELECT ls.id as ref_id, u.id as user_id, u.name, u.email, 'latihan_submit' as action, 'latihan' as source,
+              COALESCE(ls.submitted_at, ls.started_at, NOW()) as timestamp,
+              ls.latihan_id, ls.subject_name, ls.correct_count, ls.incorrect_count, ls.unanswered_count
+       FROM latihan_sessions ls
+       JOIN users u ON u.id = ls.user_id
+       ORDER BY timestamp DESC
+       LIMIT $1`,
+      [fetchLimit]
+    ),
+    pool.query(
+      `SELECT u.id as ref_id, u.id as user_id, u.name, u.email, 'user_registered' as action, 'user' as source,
+              COALESCE(u.created_at, NOW()) as timestamp
+       FROM users u
+       ORDER BY timestamp DESC
+       LIMIT $1`,
+      [fetchLimit]
+    ),
+    pool.query(
+      `SELECT 
+         (SELECT COUNT(*) FROM tryout_sessions) as tryout_count,
+         (SELECT COUNT(*) FROM um_tryout_sessions) as um_tryout_count,
+         (SELECT COUNT(*) FROM latihan_sessions) as latihan_count,
+         (SELECT COUNT(*) FROM users) as user_count`
+    ),
+  ]);
+
+  const merged = [
+    ...tryoutRes.rows.map(r => ({
+      id: `tryout-${r.ref_id}`,
+      ...r,
+      severity: 'info',
+      meta: { package_id: r.package_id, score: r.total_score },
+    })),
+    ...umTryoutRes.rows.map(r => ({
+      id: `umtryout-${r.ref_id}`,
+      ...r,
+      severity: 'info',
+      meta: { package_id: r.package_id, score: r.total_score },
+    })),
+    ...latihanRes.rows.map(r => ({
+      id: `latihan-${r.ref_id}`,
+      ...r,
+      severity: 'info',
+      meta: {
+        latihan_id: r.latihan_id,
+        subject_name: r.subject_name,
+        correct: r.correct_count,
+        incorrect: r.incorrect_count,
+        unanswered: r.unanswered_count,
+      },
+    })),
+    ...userRes.rows.map(r => ({
+      id: `user-${r.ref_id}`,
+      ...r,
+      severity: 'info',
+      meta: {},
+    })),
+  ];
+
+  const sorted = merged.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  const items = sorted.slice(safeOffset, safeOffset + safeLimit);
+
+  const totalRaw = counts.rows?.[0] || {};
+  const total = ['tryout_count', 'um_tryout_count', 'latihan_count', 'user_count']
+    .map((k) => parseInt(totalRaw[k] || 0, 10) || 0)
+    .reduce((a, b) => a + b, 0);
+
+  return { items, total };
+};
 
 // GET /api/admin/stats - Dashboard statistics
 router.get('/stats', verifyToken, verifyAdmin, async (req, res, next) => {
@@ -234,6 +359,72 @@ router.patch('/tryout-registrations/:id', verifyToken, verifyAdmin, async (req, 
   } catch (error) {
     next(error);
   }
+});
+
+// GET /api/admin/activity - preload latest activities
+router.get('/activity', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 20;
+    const page = parseInt(req.query.page, 10) || 1;
+    const offset = (page - 1) * limit;
+    const { items, total } = await fetchRecentActivities(limit, offset);
+    res.json({
+      success: true,
+      data: {
+        items,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit) || 1,
+        limit,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/admin/activity/stream - SSE live feed
+router.get('/activity/stream', ensureAdminFromAny, async (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+  res.flushHeaders?.();
+
+  let alive = true;
+
+  const sendSnapshot = async () => {
+    try {
+      const { items } = await fetchRecentActivities(50, 0);
+      res.write(`event: snapshot\n`);
+      res.write(`data: ${JSON.stringify(items)}\n\n`);
+    } catch (err) {
+      res.write(`event: error\n`);
+      res.write(`data: ${JSON.stringify({ message: 'failed_to_fetch' })}\n\n`);
+    }
+  };
+
+  const sendHeartbeat = () => {
+    res.write(`event: ping\n`);
+    res.write(`data: ${Date.now()}\n\n`);
+  };
+
+  // Initial snapshot
+  await sendSnapshot();
+  sendHeartbeat();
+
+  const interval = setInterval(async () => {
+    if (!alive) return;
+    await sendSnapshot();
+    sendHeartbeat();
+  }, 5000);
+
+  req.on('close', () => {
+    alive = false;
+    clearInterval(interval);
+    res.end();
+  });
 });
 
 module.exports = router;

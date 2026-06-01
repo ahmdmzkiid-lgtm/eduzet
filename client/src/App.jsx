@@ -44,6 +44,7 @@ import LatihanSoalUM from './pages/LatihanSoalUM';
 import LatihanSoalUMResult from './pages/LatihanSoalUMResult';
 import TryoutSessionUM from './pages/TryoutSessionUM';
 import TryoutUMResult from './pages/TryoutUMResult';
+import AdminActivity from './pages/admin/AdminActivity';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
@@ -114,6 +115,7 @@ function App() {
               <Route path="battle" element={<ManageBattleSoal />} />
               <Route path="ujian-mandiri" element={<ManageUjianMandiri />} />
               <Route path="tryout-registrations" element={<ManageTryoutRegistrations />} />
+              <Route path="activity" element={<AdminActivity />} />
             </Route>
           </Route>
           

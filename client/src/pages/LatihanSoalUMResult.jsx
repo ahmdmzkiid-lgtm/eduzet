@@ -104,13 +104,36 @@ const LatihanSoalUMResult = () => {
     });
   }
 
+  // For history mode (no state questions), trust backend aggregate for correctCount
+  if (!haveStateQuestions && resultData) {
+    if (typeof resultData.correctCount === 'number') {
+      correctCount = resultData.correctCount;
+    } else if (typeof resultData.scoreBreakdown?.benar === 'number') {
+      correctCount = resultData.scoreBreakdown.benar;
+    }
+  }
+
+  const unansweredCount = haveStateQuestions
+    ? (typeof irtData?.unanswered === 'number'
+        ? irtData.unanswered
+        : questionResults.filter(r => !r.isAnswered).length)
+    : (typeof resultData?.unansweredCount === 'number'
+        ? resultData.unansweredCount
+        : (resultData?.scoreBreakdown?.kosong ?? 0));
+
   const incorrectCount = haveStateQuestions
-    ? totalQuestions - correctCount
-    : (resultData?.incorrectCount ?? (totalQuestions - correctCount));
+    ? (typeof irtData?.incorrect === 'number'
+        ? irtData.incorrect
+        : questionResults.filter(r => r.isAnswered && !r.isCorrect).length)
+    : (typeof resultData?.incorrectCount === 'number'
+        ? resultData.incorrectCount
+        : (resultData?.scoreBreakdown?.salah ?? Math.max(0, totalQuestions - correctCount - unansweredCount)));
 
   const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
-  const filteredResults = filter === 'wrong' ? questionResults.filter(r => !r.isCorrect) : questionResults;
+  const filteredResults = filter === 'wrong'
+    ? questionResults.filter(r => (haveStateQuestions ? (r.isAnswered && !r.isCorrect) : !r.isCorrect))
+    : questionResults;
 
   if (!haveStateQuestions && !haveApiResult) {
     if (sessionId && loading) {
@@ -234,6 +257,11 @@ const LatihanSoalUMResult = () => {
                     <span className="text-[20px] md:text-[24px] font-semibold">{totalQuestions}</span>
                   </div>
                   <span className="text-[10px] md:text-[12px] text-white/60 uppercase tracking-wider font-semibold">Total Soal</span>
+                  {typeof unansweredCount === 'number' && (
+                    <span className="text-[10px] text-white/80 mt-1">
+                      Kosong: <strong>{unansweredCount}</strong>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

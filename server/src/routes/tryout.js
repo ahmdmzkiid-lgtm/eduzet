@@ -61,13 +61,13 @@ router.get('/packages/:id/stats', verifyToken, verifyAdmin, async (req, res, nex
 
 // Create package
 router.post('/packages', [verifyToken, verifyAdmin], async (req, res, next) => {
-  const { title, subject_config, scheduled_at, is_public, required_plan } = req.body;
+  const { title, subject_config, scheduled_at, is_public, is_active, required_plan } = req.body;
   try {
     const configJson = typeof subject_config === 'string' ? subject_config : JSON.stringify(subject_config || []);
     const scheduledValue = scheduled_at && scheduled_at !== '' ? scheduled_at : null;
     const result = await pool.query(
-      'INSERT INTO tryout_packages (title, subject_config, scheduled_at, is_public, required_plan) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [title, configJson, scheduledValue, is_public, required_plan || 'gratis']
+      'INSERT INTO tryout_packages (title, subject_config, scheduled_at, is_public, is_active, required_plan) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [title, configJson, scheduledValue, is_public ?? true, is_active ?? true, required_plan || 'gratis']
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) {
@@ -78,13 +78,13 @@ router.post('/packages', [verifyToken, verifyAdmin], async (req, res, next) => {
 // Update package
 router.patch('/packages/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
   const { id } = req.params;
-  const { title, subject_config, scheduled_at, is_public, required_plan } = req.body;
+  const { title, subject_config, scheduled_at, is_public, is_active, required_plan } = req.body;
   try {
     const configJson = typeof subject_config === 'string' ? subject_config : JSON.stringify(subject_config || []);
     const scheduledValue = scheduled_at && scheduled_at !== '' ? scheduled_at : null;
     const result = await pool.query(
-      'UPDATE tryout_packages SET title = $1, subject_config = $2, scheduled_at = $3, is_public = $4, required_plan = $5 WHERE id = $6 RETURNING *',
-      [title, configJson, scheduledValue, is_public, required_plan || 'gratis', id]
+      'UPDATE tryout_packages SET title = $1, subject_config = $2, scheduled_at = $3, is_public = $4, is_active = COALESCE($5, is_active), required_plan = $6 WHERE id = $7 RETURNING *',
+      [title, configJson, scheduledValue, is_public, is_active, required_plan || 'gratis', id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Package not found' });
     res.json({ success: true, data: result.rows[0] });
