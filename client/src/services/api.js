@@ -131,6 +131,7 @@ export const battleService = {
   completeMatch: (data) => api.post('/battle/complete', data),
   getLeaderboard: (subjectId) => api.get(`/battle/leaderboard/${subjectId}?t=${Date.now()}`),
   getQuestions: (questionIds) => api.get('/battle/questions', { params: { ids: JSON.stringify(questionIds) } }),
+  leaveMatch: (data) => api.post('/battle/leave', data),
 };
 
 export const ujianMandiriService = {
@@ -168,6 +169,7 @@ export const ujianMandiriService = {
   getTryoutSessionQuestions: (sessionId) => api.get(`/ujian-mandiri/tryout/session/${sessionId}/questions`),
   submitTryoutBulk: (payload) => api.post('/ujian-mandiri/tryout/submit-bulk', payload),
   getTryoutResult: (sessionId) => api.get(`/ujian-mandiri/tryout/result/${sessionId}`),
+  getLatihanResult: (sessionId) => api.get(`/ujian-mandiri/latihan/result/${sessionId}`),
 };
 
 export const uploadService = {

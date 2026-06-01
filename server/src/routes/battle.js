@@ -72,6 +72,72 @@ router.post('/create', verifyToken, async (req, res, next) => {
   }
 });
 
+// Player leaves a match (cancel waiting match or mark active match as completed)
+router.post('/leave', verifyToken, async (req, res, next) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const userId = req.user.id;
+    const { match_id } = req.body;
+
+    if (!match_id) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ success: false, error: 'Match ID required' });
+    }
+
+    const matchRes = await client.query(
+      'SELECT id, status FROM battle_matches WHERE id = $1 FOR UPDATE',
+      [match_id]
+    );
+
+    if (matchRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ success: false, error: 'Match not found' });
+    }
+
+    const match = matchRes.rows[0];
+
+    const participantsRes = await client.query(
+      'SELECT id, user_id FROM battle_participants WHERE match_id = $1',
+      [match_id]
+    );
+
+    const isParticipant = participantsRes.rows.some((p) => p.user_id === userId);
+    if (!isParticipant) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ success: false, error: 'You are not a participant in this match' });
+    }
+
+    // If match is still waiting (typically only 1 participant), cancel it completely
+    if (match.status === 'waiting') {
+      await client.query('DELETE FROM battle_participants WHERE match_id = $1', [match_id]);
+      await client.query('DELETE FROM battle_matches WHERE id = $1', [match_id]);
+      await client.query('COMMIT');
+      return res.json({ success: true, data: { status: 'cancelled' } });
+    }
+
+    // If match is active and someone leaves, mark as completed so it is no longer used
+    if (match.status === 'active') {
+      await client.query(
+        'UPDATE battle_matches SET status = $1, completed_at = NOW() WHERE id = $2',
+        ['completed', match_id]
+      );
+      await client.query('COMMIT');
+      return res.json({ success: true, data: { status: 'completed' } });
+    }
+
+    // For already completed or other statuses, just return current status
+    await client.query('COMMIT');
+    return res.json({ success: true, data: { status: match.status } });
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Battle leave error:', error);
+    next(error);
+  } finally {
+    client.release();
+  }
+});
+
 // Join an existing battle match
 router.post('/join', verifyToken, async (req, res, next) => {
   const client = await pool.connect();

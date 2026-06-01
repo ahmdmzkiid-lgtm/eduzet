@@ -457,6 +457,16 @@ export default function UjianMandiriDetail() {
                         {lat.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Latihan'}
                       </button>
                     )}
+                    {lat.user_history?.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lat.user_history[0].id}`)}
+                        className="w-full border border-[#0050cb] text-[#0050cb] py-3 rounded-lg font-bold text-[14px] mt-2 flex items-center justify-center gap-2 hover:bg-[#0050cb]/5 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[16px]">visibility</span>
+                        Hasil Terakhir
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

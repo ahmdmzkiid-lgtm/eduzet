@@ -859,6 +859,120 @@ router.post('/tryout/submit-bulk', verifyToken, async (req, res, next) => {
   }
 });
 
+// Get Ujian Mandiri Latihan Session Result
+router.get('/latihan/result/:sessionId', verifyToken, async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.user.id;
+
+    // Get latihan session joined with UM latihan + ujian info (if available)
+    const sessionRes = await pool.query(
+      `SELECT ls.*, 
+              um_ls.title AS latihan_name,
+              um_ls.ujian_id AS ujian_id,
+              um.nama_ujian AS ujian_name
+       FROM latihan_sessions ls
+       LEFT JOIN um_latihan_soal um_ls ON ls.latihan_id = um_ls.id
+       LEFT JOIN ujian_mandiri um ON um_ls.ujian_id = um.id
+       WHERE ls.id = $1 AND ls.user_id = $2`,
+      [sessionId, userId]
+    );
+
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Hasil latihan tidak ditemukan atau tidak authorized' });
+    }
+
+    const session = sessionRes.rows[0];
+
+    // Parse score_breakdown JSON
+    let scoreBreakdown = session.score_breakdown;
+    if (typeof scoreBreakdown === 'string') {
+      try {
+        scoreBreakdown = JSON.parse(scoreBreakdown);
+      } catch {
+        scoreBreakdown = {};
+      }
+    }
+
+    const itemAnalysis = Array.isArray(scoreBreakdown?.itemAnalysis)
+      ? scoreBreakdown.itemAnalysis
+      : [];
+
+    const analysisByQuestionId = {};
+    itemAnalysis.forEach((item) => {
+      if (item && item.questionId) {
+        analysisByQuestionId[item.questionId] = item;
+      }
+    });
+
+    // If this latihan is linked to UM latihan_soal, fetch questions & choices
+    let questions = [];
+    if (session.latihan_id) {
+      const questionsRes = await pool.query(
+        `SELECT q.id, q.content, q.image_url, q.difficulty,
+                (
+                  SELECT json_agg(json_build_object(
+                    'id', ac.id,
+                    'label', ac.label,
+                    'content', ac.content,
+                    'is_correct', COALESCE(ac.is_correct, false),
+                    'explanation', ac.explanation
+                  ) ORDER BY ac.label)
+                  FROM um_answer_choices ac
+                  WHERE ac.question_id = q.id
+                ) AS choices
+         FROM um_questions q
+         WHERE q.latihan_id = $1
+         ORDER BY q.display_order ASC, q.created_at ASC`,
+        [session.latihan_id]
+      );
+
+      questions = questionsRes.rows.map((q, index) => {
+        const choices = Array.isArray(q.choices) ? q.choices : [];
+        const analysis = analysisByQuestionId[q.id] || null;
+        const isCorrect = analysis ? !!analysis.isCorrect : null;
+
+        return {
+          id: q.id,
+          position: index + 1,
+          content: q.content,
+          image_url: q.image_url,
+          difficulty: q.difficulty,
+          choices,
+          isCorrect,
+        };
+      });
+    }
+
+    const correctCount = session.correct_count ?? scoreBreakdown?.benar ?? 0;
+    const incorrectCount = session.incorrect_count ?? scoreBreakdown?.salah ?? 0;
+    const unansweredCount = session.unanswered_count ?? scoreBreakdown?.kosong ?? 0;
+    const totalQuestions = session.total_questions ?? questions.length;
+
+    res.json({
+      success: true,
+      data: {
+        sessionId: session.id,
+        latihanId: session.latihan_id,
+        ujianId: session.ujian_id || null,
+        latihanName: session.latihan_name || session.subject_name || 'Latihan',
+        ujianName: session.ujian_name || '',
+        irtScore: session.irt_score,
+        scoreBreakdown,
+        correctCount,
+        incorrectCount,
+        unansweredCount,
+        totalQuestions,
+        questions,
+        submittedAt: session.submitted_at,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching UM latihan result:', error);
+    next(error);
+  }
+});
+
 // Get Ujian Mandiri Tryout Session Result
 router.get('/tryout/result/:sessionId', verifyToken, async (req, res, next) => {
   try {

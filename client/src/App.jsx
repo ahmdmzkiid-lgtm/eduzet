@@ -92,6 +92,7 @@ function App() {
             <Route path="/ujian-mandiri/:id" element={<UjianMandiriDetail />} />
             <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId" element={<LatihanSoalUM />} />
             <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId/hasil" element={<LatihanSoalUMResult />} />
+            <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId/hasil/:sessionId" element={<LatihanSoalUMResult />} />
             <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId" element={<TryoutSessionUM />} />
             <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId/hasil/:sessionId" element={<TryoutUMResult />} />
           </Route>

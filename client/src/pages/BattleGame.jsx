@@ -152,11 +152,18 @@ const BattleGame = () => {
       console.error('Complete match error:', err);
     }
   };
-
-  const handleExit = () => {
-    clearInterval(pollRef.current);
-    clearTimeout(transitionTimeoutRef.current);
-    navigate('/battle');
+  const handleExit = async () => {
+    try {
+      if (matchId) {
+        await battleService.leaveMatch({ match_id: matchId });
+      }
+    } catch (err) {
+      // suppress leave errors so user can still exit
+    } finally {
+      clearInterval(pollRef.current);
+      clearTimeout(transitionTimeoutRef.current);
+      navigate('/battle');
+    }
   };
 
   const me = participants.find(p => p.is_me);

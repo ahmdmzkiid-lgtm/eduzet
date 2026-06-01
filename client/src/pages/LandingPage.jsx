@@ -15,48 +15,20 @@ const LandingPage = () => {
     }
   };
 
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-
   return (
     <div className="landing-page">
       {/* Nav */}
       <nav className="landing-nav">
         <div className="landing-nav-inner">
           <div className="landing-logo">
-            <img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-10 sm:h-14" style={{ height: '56px' }} />
+            <img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-10 sm:h-14" />
           </div>
-          <div className="landing-nav-actions hidden md:flex">
+          <div className="landing-nav-actions">
             <button className="btn-login" onClick={() => navigate('/login')}>Login</button>
             <button className="btn-join" onClick={() => navigate('/register')}>Daftar Gratis</button>
           </div>
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-[#424656]">
-            <span className="material-symbols-outlined text-[32px]">{mobileMenuOpen ? 'close' : 'menu'}</span>
-          </button>
         </div>
       </nav>
-
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/50 md:hidden animate-fade-in" onClick={() => setMobileMenuOpen(false)}>
-          <div className="absolute top-0 left-0 right-0 bg-white rounded-b-[32px] shadow-2xl p-6 pt-20 animate-slide-down" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-8">
-              <img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-8" />
-              <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 rounded-full bg-[#f2f3ff] flex items-center justify-center text-[#424656]">
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            </div>
-            <nav className="flex flex-col gap-3 mb-8">
-              <a href="#features" onClick={() => setMobileMenuOpen(false)} className="px-5 py-4 rounded-2xl text-[16px] font-bold text-[#424656] hover:bg-[#f2f3ff] transition-colors">Fitur</a>
-              <a href="#pricing" onClick={() => setMobileMenuOpen(false)} className="px-5 py-4 rounded-2xl text-[16px] font-bold text-[#424656] hover:bg-[#f2f3ff] transition-colors">Harga</a>
-              <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="px-5 py-4 rounded-2xl text-[16px] font-bold text-[#424656] hover:bg-[#f2f3ff] transition-colors">FAQ</a>
-            </nav>
-            <div className="flex flex-col gap-3">
-              <button className="w-full py-4 rounded-2xl bg-[#f2f3ff] text-[#0050cb] font-bold text-[16px]" onClick={() => navigate('/login')}>Login</button>
-              <button className="w-full py-4 rounded-2xl bg-[#0050cb] text-white font-bold text-[16px] shadow-lg" onClick={() => navigate('/register')}>Daftar Sekarang</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <main style={{ paddingTop: 80 }}>
         {/* Hero */}
@@ -269,7 +241,7 @@ const LandingPage = () => {
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="landing-logo">
-              <img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-14" style={{ height: '56px' }} />
+              <img src="/eduzet-brand-light.svg" alt="Eduzet" className="h-10 sm:h-14" />
             </div>
             <p>Platform persiapan UTBK terbaik untuk raih PTN impianmu.</p>
           </div>

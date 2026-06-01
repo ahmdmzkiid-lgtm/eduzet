@@ -1,40 +1,129 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { ujianMandiriService } from '../services/api';
 import DiscussQuestionModal from '../components/DiscussQuestionModal';
 
 const LatihanSoalUMResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { ujianId: routeUjianId, latihanId: routeLatihanId, sessionId } = useParams();
   const { user, isAdmin } = useAuth();
   const [filter, setFilter] = useState('all');
   const [isDiscussOpen, setIsDiscussOpen] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [resultData, setResultData] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const openDiscussion = (question) => {
     setSelectedQuestion(question);
     setIsDiscussOpen(true);
   };
 
-  const { questions = [], answers = {}, latihanName = 'Latihan', ujianName = '', ujianId = '', latihanId = '', irtData } = location.state || {};
+  const stateData = location.state || {};
+  const haveStateQuestions = Array.isArray(stateData.questions) && stateData.questions.length > 0;
 
-  const totalQuestions = questions.length;
+  useEffect(() => {
+    const fetchResult = async () => {
+      if (!sessionId || haveStateQuestions) return;
+      setLoading(true);
+      try {
+        const res = await ujianMandiriService.getLatihanResult(sessionId);
+        setResultData(res.data?.data || null);
+      } catch (err) {
+        console.error('Failed to fetch UM latihan result:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchResult();
+  }, [sessionId, haveStateQuestions]);
+
+  const haveApiResult = !!resultData;
+
+  const effectiveQuestions = haveStateQuestions
+    ? (stateData.questions || [])
+    : (resultData?.questions || []);
+
+  const effectiveAnswers = haveStateQuestions ? (stateData.answers || {}) : {};
+
+  const latihanName = haveStateQuestions
+    ? (stateData.latihanName || 'Latihan')
+    : (resultData?.latihanName || 'Latihan');
+
+  const ujianName = haveStateQuestions
+    ? (stateData.ujianName || '')
+    : (resultData?.ujianName || '');
+
+  const ujianId = haveStateQuestions
+    ? (stateData.ujianId || routeUjianId || '')
+    : (resultData?.ujianId || routeUjianId || '');
+
+  const latihanId = haveStateQuestions
+    ? (stateData.latihanId || routeLatihanId || '')
+    : (resultData?.latihanId || routeLatihanId || '');
+
+  const irtData = haveStateQuestions
+    ? (stateData.irtData || null)
+    : (resultData
+        ? {
+            irtScore: resultData.irtScore,
+            ...(resultData.scoreBreakdown || {}),
+          }
+        : null);
+
+  const totalQuestions = effectiveQuestions.length;
   let correctCount = 0;
-  const questionResults = questions.map((q, idx) => {
-    const chosenId = answers[idx];
-    const chosenChoice = q.choices?.find(c => c.id === chosenId) || null;
-    const correctChoice = q.choices?.find(c => c.is_correct) || null;
-    const isCorrect = chosenChoice?.is_correct === true;
-    if (isCorrect) correctCount++;
-    return { ...q, idx, chosenId, chosenChoice, correctChoice, isCorrect, isAnswered: !!chosenId };
-  });
-  const incorrectCount = totalQuestions - correctCount;
+  let questionResults = [];
+
+  if (haveStateQuestions) {
+    questionResults = effectiveQuestions.map((q, idx) => {
+      const chosenId = effectiveAnswers[idx];
+      const chosenChoice = q.choices?.find(c => c.id === chosenId) || null;
+      const correctChoice = q.choices?.find(c => c.is_correct) || null;
+      const isCorrect = chosenChoice?.is_correct === true;
+      if (isCorrect) correctCount++;
+      return { ...q, idx, chosenId, chosenChoice, correctChoice, isCorrect, isAnswered: !!chosenId };
+    });
+  } else {
+    questionResults = effectiveQuestions.map((q, idx) => {
+      const choices = q.choices || [];
+      const correctChoice = choices.find(c => c.is_correct) || null;
+      const isCorrect = q.isCorrect === true;
+      if (isCorrect) correctCount++;
+      return {
+        ...q,
+        idx: q.position ? q.position - 1 : idx,
+        chosenId: null,
+        chosenChoice: null,
+        correctChoice,
+        isCorrect,
+        isAnswered: false,
+      };
+    });
+  }
+
+  const incorrectCount = haveStateQuestions
+    ? totalQuestions - correctCount
+    : (resultData?.incorrectCount ?? (totalQuestions - correctCount));
+
   const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   const filteredResults = filter === 'wrong' ? questionResults.filter(r => !r.isCorrect) : questionResults;
 
-  if (!location.state || questions.length === 0) {
+  if (!haveStateQuestions && !haveApiResult) {
+    if (sessionId && loading) {
+      return (
+        <div className="bg-[#faf8ff] min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-14 h-14 border-4 border-[#0050cb] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="mt-5 text-[#424656] font-medium text-[15px]">Memuat hasil latihan...</p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-[#faf8ff] min-h-screen flex items-center justify-center">
         <div className="text-center">

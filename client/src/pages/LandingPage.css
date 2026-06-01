@@ -20,6 +20,11 @@
 .landing-logo {
   font-size: 24px; font-weight: 700; color: #0050cb;
 }
+.landing-logo img {
+  display: block;
+  height: 40px;
+  width: auto;
+}
 .landing-nav-links {
   display: flex; gap: 24px;
 }
@@ -298,8 +303,18 @@
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+  .landing-nav-inner {
+    padding: 0 16px;
+    height: 60px;
+  }
+  .landing-logo img {
+    height: 32px;
+  }
+  .landing-menu-btn {
+    width: 40px;
+    height: 40px;
+  }
   .landing-nav-links { display: none; }
-  .landing-nav-inner { padding: 0 16px; }
   .hero-content { 
     display: flex; 
     flex-direction: column-reverse; 

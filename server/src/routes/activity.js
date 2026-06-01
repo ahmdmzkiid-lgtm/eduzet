@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../config/db');
 const { verifyToken } = require('../middleware/auth');
-const { calculateIRTScore, thetaToScore, estimateAbility, DEFAULT_IRT_PARAMS } = require('../services/irtScoringService');
+const { calculateIRTScore } = require('../services/irtScoringService');
 
 // Submit latihan (practice) result with IRT scoring
 router.post('/latihan/submit', verifyToken, async (req, res, next) => {
