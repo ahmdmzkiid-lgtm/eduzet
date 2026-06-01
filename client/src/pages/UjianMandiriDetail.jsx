@@ -7,6 +7,12 @@ import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
 import TryoutVerificationModal from '../components/tryout/TryoutVerificationModal';
 
+const PLAN_RANK = {
+  gratis: 0,
+  premium: 1,
+  sultan: 2,
+};
+
 /* ─── Navbar (same pattern as all other pages) ─── */
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
   const [scrolled, setScrolled] = useState(false);
