@@ -611,17 +611,7 @@ export default function ManageUjianMandiri() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {pkg.points_unanswered ?? 0}</span>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <button type="button" onClick={() => openManageSoal('tryout', ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
-                              <span className="material-symbols-outlined text-[18px]">quiz</span>
-                            </button>
-                            <button type="button" onClick={() => openTryoutModal(ujian.id, pkg)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
-                            <button type="button" onClick={() => handleDeleteTryout(ujian.id, pkg.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
-                          </div>
+                          <div className="hidden" />
                         </div>
                       ))}
                     </div>
@@ -682,17 +672,7 @@ export default function ManageUjianMandiri() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {lat.points_unanswered ?? 0}</span>
                             </div>
                           </div>
-                          <div className="flex gap-1">
-                            <button type="button" onClick={() => openManageSoal('latihan', ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Kelola Soal">
-                              <span className="material-symbols-outlined text-[18px]">quiz</span>
-                            </button>
-                            <button type="button" onClick={() => openLatihanModal(ujian.id, lat)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#0050cb] hover:bg-[#dae1ff] transition-colors" title="Edit">
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
-                            <button type="button" onClick={() => handleDeleteLatihan(ujian.id, lat.id)} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#ba1a1a] hover:bg-[#ffdad6] transition-colors" title="Hapus">
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
-                          </div>
+                          <div className="hidden" />
                         </div>
                       ))}
                     </div>

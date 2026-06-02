@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './hooks/useNotifications';
+import NotificationModal from './components/NotificationModal';
 import { ProtectedRoute, AdminRoute, PublicRoute, StudentRoute, StudentRouteWrapped } from './components/layout/ProtectedRoute';
 
 // Pages
@@ -45,6 +47,7 @@ import LatihanSoalUMResult from './pages/LatihanSoalUMResult';
 import TryoutSessionUM from './pages/TryoutSessionUM';
 import TryoutUMResult from './pages/TryoutUMResult';
 import AdminActivity from './pages/admin/AdminActivity';
+import AdminNotification from './pages/admin/AdminNotification';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
@@ -57,9 +60,10 @@ function App() {
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes */}
+        <NotificationProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
@@ -116,12 +120,15 @@ function App() {
               <Route path="ujian-mandiri" element={<ManageUjianMandiri />} />
               <Route path="tryout-registrations" element={<ManageTryoutRegistrations />} />
               <Route path="activity" element={<AdminActivity />} />
+              <Route path="notifications" element={<AdminNotification />} />
             </Route>
           </Route>
           
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
+        <NotificationModal />
       </Router>
+      </NotificationProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

@@ -41,6 +41,7 @@ const AdminDashboard = () => {
     { path: '/admin/tryout-registrations', icon: 'verified', label: 'Verifikasi Tryout' },
     { path: '/admin/users', icon: 'group', label: 'Users' },
     { path: '/admin/settings', icon: 'ad_units', label: 'Banner' },
+    { path: '/admin/notifications', icon: 'campaign', label: 'Notifikasi' },
     { path: '/admin/activity', icon: 'monitoring', label: 'Activity' },
   ];
 

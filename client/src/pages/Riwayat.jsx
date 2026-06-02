@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { activityService } from '../services/api';
 import ChatWidget from '../components/ChatWidget';
 import Footer from '../components/Footer';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -66,6 +67,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 </span>
               )}
             </div>
+            <NotificationDropdown />
           </div>
           <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">logout</span>

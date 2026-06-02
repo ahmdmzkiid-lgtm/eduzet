@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { PTN_DATA, SUBTES_SHORT } from '../data/ptnData';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 /* ─── Navbar (same pattern as all other pages) ─── */
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
@@ -66,6 +67,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                   </span>
                 )}
               </div>
+              <NotificationDropdown />
             </div>
             <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">logout</span>

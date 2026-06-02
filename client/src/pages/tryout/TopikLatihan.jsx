@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { subjectService } from '../../services/api';
+import NotificationDropdown from '../../components/NotificationDropdown';
 
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -54,6 +55,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 </span>
               )}
             </div>
+            <NotificationDropdown />
           </div>
           <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors flex items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">logout</span>

@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import { useAuth } from '../hooks/useAuth';
 import { ujianMandiriService } from '../services/api';
 import { getStatusConfig } from '../data/ujianMandiriData';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 /* ─── Navbar (same pattern as PrediksiSkor) ─── */
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
@@ -58,6 +59,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
               }`}>
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>
+              <NotificationDropdown />
             </div>
             <button onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">logout</span>

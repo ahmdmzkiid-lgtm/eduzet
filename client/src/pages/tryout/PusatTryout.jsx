@@ -5,6 +5,7 @@ import { settingsService, subjectService, tryoutService, activityService } from 
 import toast from 'react-hot-toast';
 import ChatWidget from '../../components/ChatWidget';
 import Footer from '../../components/Footer';
+import NotificationDropdown from '../../components/NotificationDropdown';
 
 const PLAN_RANK = { gratis: 0, premium: 1, sultan: 2 };
 
@@ -69,6 +70,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 </span>
               )}
             </div>
+            <NotificationDropdown />
           </div>
           <button type="button" onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
             <span className="material-symbols-outlined text-[20px]">logout</span>

@@ -108,6 +108,16 @@ export const settingsService = {
   update: (data) => api.patch('/settings', data),
 };
 
+export const notificationService = {
+  getAll: () => api.get('/notifications'),
+  getUnshown: () => api.get('/notifications/unshown'),
+  markModalShown: (id) => api.patch(`/notifications/${id}/modal-shown`),
+  markRead: (id) => api.patch(`/notifications/${id}/read`),
+  markAllRead: () => api.post('/notifications/read-all'),
+  send: (data) => api.post('/notifications/send', data), // Admin only
+  getHistory: () => api.get('/notifications/admin/history'), // Admin only
+};
+
 export const activityService = {
   getRecent: () => api.get('/activity'),
   getRiwayat: () => api.get('/activity/riwayat'),

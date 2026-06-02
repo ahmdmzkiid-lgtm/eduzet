@@ -46,6 +46,7 @@ const generateRoutes = require('./routes/generate');
 const battleRoutes = require('./routes/battle');
 const uploadRoutes = require('./routes/upload');
 const ujianMandiriRoutes = require('./routes/ujianMandiri');
+const notificationRoutes = require('./routes/notifications');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -64,6 +65,7 @@ app.use('/api/generate', generateRoutes);
 app.use('/api/battle', battleRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ujian-mandiri', ujianMandiriRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

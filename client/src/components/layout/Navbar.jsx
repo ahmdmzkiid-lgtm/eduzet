@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import NotificationDropdown from '../NotificationDropdown';
 
 const Navbar = () => {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -40,6 +41,7 @@ const Navbar = () => {
               {isAuthenticated ? (
                 <div className="flex items-center space-x-4">
                   <span className="text-sm text-slate-400">Hi, {user?.name.split(' ')[0]}</span>
+                  <NotificationDropdown />
                   <button 
                     onClick={handleLogout}
                     className="text-sm text-slate-300 hover:text-accent-red transition-colors"

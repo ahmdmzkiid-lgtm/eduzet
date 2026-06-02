@@ -6,11 +6,47 @@ import { getStatusConfig } from '../data/ujianMandiriData';
 import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
 import TryoutVerificationModal from '../components/tryout/TryoutVerificationModal';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const PLAN_RANK = {
   gratis: 0,
   premium: 1,
   sultan: 2,
+};
+
+const PLAN_BADGE = {
+  gratis: {
+    label: 'FREE',
+    className: 'text-[#424656] bg-[#f6f3f4] border border-[#e5e2e3]',
+  },
+  premium: {
+    label: 'PREMIUM',
+    className: 'text-[#0050cb] bg-[#dae1ff] border border-[#c0c8f5]',
+  },
+  sultan: {
+    label: 'SULTAN',
+    className: 'text-[#a33200] bg-[#ffdbd0] border border-[#f4b9a5]',
+  },
+};
+
+const getAttemptCounts = (attempt) => {
+  if (!attempt) return null;
+  let data = attempt.score_breakdown;
+  try {
+    data = typeof data === 'string' ? JSON.parse(data) : data;
+  } catch (e) {
+    data = null;
+  }
+  if (!data) return null;
+  const benar = data.benar ?? data.correct_count ?? data.correct ?? data.correctCount ?? null;
+  const salah = data.salah ?? data.incorrect_count ?? data.incorrect ?? data.incorrectCount ?? null;
+  const kosong = data.kosong ?? data.unanswered_count ?? data.unanswered ?? data.unansweredCount ?? null;
+  if (benar === null && salah === null && kosong === null) return null;
+  return {
+    benar: benar ?? 0,
+    salah: salah ?? 0,
+    kosong: kosong ?? 0,
+  };
 };
 
 /* ─── Navbar (same pattern as all other pages) ─── */
@@ -75,6 +111,7 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                   </span>
                 )}
               </div>
+              <NotificationDropdown />
             </div>
             <button type="button" onClick={onLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a] transition-colors items-center justify-center">
               <span className="material-symbols-outlined text-[20px]">logout</span>
@@ -278,105 +315,93 @@ export default function UjianMandiriDetail() {
           </div>
           <div className="space-y-6">
             {tryoutPackages.length > 0 ? (
-              tryoutPackages.map((pkg) => (
-                <article
-                  key={pkg.id}
-                  className="bg-white rounded-xl p-6 lg:p-8 flex flex-col md:flex-row gap-6 lg:gap-8 items-center border border-[#e5e2e3] transition-all hover:border-[#0050cb]/30 shadow-[0_24px_48px_-12px_rgba(0,51,153,0.12)]"
-                >
-                  <div
-                    className="w-24 h-24 lg:w-32 lg:h-32 rounded-2xl flex items-center justify-center shrink-0"
-                    style={{ backgroundColor: `${pkg.icon_color || '#0050cb'}10` }}
+              tryoutPackages.map((pkg) => {
+                const reqPlan = pkg.required_plan || 'gratis';
+                const badge = PLAN_BADGE[reqPlan] || PLAN_BADGE.gratis;
+                const lastAttempt = pkg.user_history?.[0];
+                const lastScore = lastAttempt?.score;
+                const lastCounts = getAttemptCounts(lastAttempt);
+                const inactive = pkg.is_active === false;
+                const locked = (PLAN_RANK[reqPlan] ?? 0) > userRank;
+
+                return (
+                  <article
+                    key={pkg.id}
+                    className="bg-white border border-[#e5e2e3] rounded-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.08)] p-5 lg:p-6 flex flex-col gap-4 hover:border-[#0050cb]/40 transition-all"
                   >
-                    <span
-                      className="material-symbols-outlined text-[36px] lg:text-[48px]"
-                      style={{ color: pkg.icon_color || '#0050cb' }}
-                    >
-                      {pkg.icon}
-                    </span>
-                  </div>
-                  <div className="flex-grow space-y-3 lg:space-y-4 text-center md:text-left w-full">
-                    <div className="space-y-1">
-                      {pkg.user_history?.length > 0 && (
-                        <div className="inline-flex items-center gap-1.5 bg-green-50 border border-green-200 text-green-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider w-fit mb-2">
-                          <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                          Selesai
-                        </div>
-                      )}
-                      <h3 className="text-[18px] lg:text-[24px] font-semibold text-[#191b24]">{pkg.title}</h3>
-                      <p className="text-[14px] lg:text-[16px] text-[#424656]">{pkg.description}</p>
-                    </div>
-                    <div className="flex flex-wrap justify-center md:justify-start gap-4 lg:gap-6 pt-2">
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: pkg.icon_color || '#0050cb' }}>task_alt</span>
-                        <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">{pkg.soal_count || 0} SOAL</span>
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <h3 className="text-[16px] lg:text-[18px] font-semibold text-[#191b24] truncate">{pkg.title}</h3>
+                        <p className="text-[12px] lg:text-[13px] text-[#424656] line-clamp-2">{pkg.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: pkg.icon_color || '#0050cb' }}>schedule</span>
-                        <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">{pkg.duration} MENIT</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: pkg.icon_color || '#0050cb' }}>group</span>
-                        <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">{(pkg.peserta || 0).toLocaleString()} PESERTA</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: pkg.icon_color || '#0050cb' }}>sports_score</span>
-                        <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">
-                          B: +{pkg.points_correct ?? 4} | S: {pkg.points_incorrect ?? -1} | K: {pkg.points_unanswered ?? 0}
+                        {inactive && (
+                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">Non-aktif</span>
+                        )}
+                        {!inactive && locked && (
+                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">
+                            {reqPlan === 'sultan' ? 'Khusus Sultan' : 'Khusus Premium'}
+                          </span>
+                        )}
+                        <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded ${badge.className}`}>
+                          {badge.label}
                         </span>
                       </div>
                     </div>
-                    
-                    {pkg.user_history?.length > 0 && (
-                      <div className="mt-4 pt-4 border-t border-dashed border-[#e5e2e3] text-left">
-                        <h4 className="text-[11px] font-bold text-[#727687] uppercase tracking-wider mb-2 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-sm">history</span>
-                          Riwayat Nilai
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {pkg.user_history.map((attempt, index) => (
-                            <button
-                              type="button"
-                              key={attempt.id}
-                              onClick={() => navigate(`/ujian-mandiri/${ujian.id}/tryout/${pkg.id}/hasil/${attempt.id}`)}
-                              className="inline-flex items-center gap-1.5 bg-white border border-[#c2c6d8] hover:border-[#0050cb] hover:text-[#0050cb] px-3 py-1.5 rounded-lg text-xs font-semibold shadow-sm transition-all"
-                            >
-                              <span className="material-symbols-outlined text-xs">assessment</span>
-                              Poin: <strong className="font-extrabold">{attempt.score}</strong> (Attempt {pkg.user_history.length - index})
-                            </button>
-                          ))}
-                        </div>
+
+                    <div className="flex items-center gap-2 text-[11px] text-[#727687]">
+                      <span>{pkg.duration || 0}m</span>
+                      <span>•</span>
+                      <span>{pkg.soal_count || 0} Soal</span>
+                    </div>
+
+                    <div className="py-3 border-y border-[#e5e2e3] flex justify-between items-center">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider text-[#727687]">Terakhir</span>
+                        <div className="text-[20px] font-bold text-[#0050cb] leading-tight">{lastScore ?? 'Belum ada'}</div>
                       </div>
-                    )}
-                  </div>
-                  <div className="shrink-0 flex flex-col gap-2 w-full md:w-auto">
-                    <button
-                      type="button"
-                      onClick={() => handleStartTryout(pkg)}
-                      disabled={checkingRegistration !== false}
-                      className="bg-[#0050cb] text-white px-6 lg:px-8 py-3 lg:py-4 rounded-lg font-bold text-[14px] hover:bg-[#003fa4] transition-all active:scale-95 whitespace-nowrap disabled:opacity-75 flex items-center justify-center gap-2 w-full"
-                    >
-                      {checkingRegistration === pkg.id ? (
-                        <>
-                          <span className="material-symbols-outlined animate-spin text-[16px]">progress_activity</span>
-                          <span>Memeriksa...</span>
-                        </>
-                      ) : (
-                        pkg.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Tryout'
-                      )}
-                    </button>
-                    {pkg.user_history?.length > 0 && (
+                      <div className="text-right text-[10px] font-mono text-[#424656] leading-tight">
+                        {lastCounts ? (
+                          <div className="bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] inline-flex items-center gap-2">
+                            <span className="text-green-700">B:{lastCounts.benar}</span>
+                            <span className="text-[#ba1a1a]">S:{lastCounts.salah}</span>
+                            <span className="text-[#727687]">K:{lastCounts.kosong}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[#727687]">Belum ada detail</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
-                        onClick={() => navigate(`/ujian-mandiri/${ujian.id}/tryout/${pkg.id}/hasil/${pkg.user_history[0].id}`)}
-                        className="border border-[#0050cb] text-[#0050cb] hover:bg-[#0050cb]/5 px-6 lg:px-8 py-3 rounded-lg font-bold text-[14px] transition-all active:scale-95 whitespace-nowrap flex items-center justify-center gap-2 w-full"
+                        onClick={() => handleStartTryout(pkg)}
+                        disabled={inactive || locked || checkingRegistration !== false}
+                        className={`py-2.5 rounded-md font-bold text-[12px] flex items-center justify-center gap-2 transition-all ${
+                          inactive || locked || checkingRegistration !== false
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'
+                        }`}
                       >
-                        <span className="material-symbols-outlined text-[16px]">visibility</span>
-                        Hasil Terakhir
+                        {checkingRegistration === pkg.id ? 'Memeriksa...' : (lastScore ? 'Mulai Lagi' : 'Mulai')}
                       </button>
-                    )}
-                  </div>
-                </article>
-              ))
+                      <button
+                        type="button"
+                        onClick={() => lastAttempt && navigate(`/ujian-mandiri/${ujian.id}/tryout/${pkg.id}/hasil/${lastAttempt.id}`)}
+                        disabled={!lastAttempt}
+                        className={`py-2.5 rounded-md font-bold text-[12px] border transition-all flex items-center justify-center gap-2 ${
+                          lastAttempt
+                            ? 'border-[#c2c6d8] text-[#424656] hover:bg-[#f2f3ff]'
+                            : 'border-[#e5e2e3] text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        Hasil
+                      </button>
+                    </div>
+                  </article>
+                );
+              })
             ) : (
               <div className="text-center py-16 bg-white rounded-xl border border-[#e5e2e3]">
                 <span className="material-symbols-outlined text-[48px] text-[#c2c6d8] mb-2">quiz</span>
@@ -391,13 +416,17 @@ export default function UjianMandiriDetail() {
           <div className="flex justify-between items-end mb-8">
             <h2 className="text-[24px] lg:text-[32px] font-bold text-[#191b24] leading-tight">Latihan Soal Mandiri</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
             {latihanSoal.length > 0 ? (
               latihanSoal.map((lat) => {
                 const reqPlan = lat.required_plan || 'gratis';
+                const badge = PLAN_BADGE[reqPlan] || PLAN_BADGE.gratis;
                 const reqRank = PLAN_RANK[reqPlan] ?? 0;
                 const locked = reqRank > userRank;
                 const inactive = lat.is_active === false;
+                const lastAttempt = lat.user_history?.[0];
+                const lastScore = lastAttempt?.score;
+                const lastCounts = getAttemptCounts(lastAttempt);
 
                 const handleLatihanClick = () => {
                   if (inactive) {
@@ -412,122 +441,84 @@ export default function UjianMandiriDetail() {
                 };
 
                 return (
-                <div
-                  key={lat.id}
-                  className="group bg-white rounded-xl overflow-hidden flex flex-col transition-transform duration-300 hover:-translate-y-1 border border-[#e5e2e3] shadow-sm hover:shadow-lg"
-                  onClick={handleLatihanClick}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <div className="p-6 pb-0">
-                    <div className="flex justify-between items-start">
-                      <div
-                        className="w-16 h-16 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: `${lat.icon_bg_color || '#0050cb'}15` }}
-                      >
-                        <span
-                          className="material-symbols-outlined text-[32px]"
-                          style={{ color: lat.icon_bg_color || '#0050cb' }}
-                        >
-                          {lat.icon}
-                        </span>
+                  <div
+                    key={lat.id}
+                    className="bg-white border border-[#e5e2e3] rounded-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.08)] flex flex-col p-4 gap-3 hover:border-[#0050cb]/40 transition-all"
+                  >
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[9px] font-bold uppercase tracking-[0.18em] block text-[#0050cb] mb-1">{lat.category || 'Latihan Mandiri'}</span>
+                        <h3 className="text-[15px] font-semibold text-[#191b24] truncate">{lat.title}</h3>
+                        <p className="text-[12px] text-[#424656] line-clamp-2">{lat.description}</p>
                       </div>
-                      <div className="flex flex-wrap gap-2 justify-end">
-                        {lat.user_history?.length > 0 && (
-                          <span className="inline-flex items-center gap-1 bg-green-50 border border-green-200 text-green-700 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            <span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                            Selesai
-                          </span>
-                        )}
+                      <div className="flex flex-col items-end gap-1">
                         {inactive && (
-                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            <span className="material-symbols-outlined text-[14px]">visibility_off</span>
-                            Non-aktif
-                          </span>
+                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">Non-aktif</span>
                         )}
                         {!inactive && locked && (
-                          <span className="inline-flex items-center gap-1 bg-gray-100 text-gray-600 border border-gray-200 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
-                            <span className="material-symbols-outlined text-[14px]">lock</span>
-                            {reqPlan === 'sultan' ? 'Sultan' : 'Premium'}
+                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">
+                            {reqPlan === 'sultan' ? 'Khusus Sultan' : 'Khusus Premium'}
                           </span>
+                        )}
+                        <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] text-[#727687]">
+                      <span>{lat.soal_count || 0} Soal</span>
+                      <span>•</span>
+                      <span className="font-mono bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] text-[10px]">
+                        +{lat.points_correct ?? 1} | {lat.points_incorrect ?? 0} | {lat.points_unanswered ?? 0}
+                      </span>
+                    </div>
+
+                    <div className="py-2 border-y border-[#e5e2e3] flex justify-between items-center">
+                      <div>
+                        <span className="text-[9px] uppercase tracking-wider text-[#727687]">Terakhir</span>
+                        <div className="text-[18px] font-bold text-[#0050cb] leading-tight">{lastScore ?? 'Belum ada'}</div>
+                      </div>
+                      <div className="text-right text-[10px] font-mono text-[#424656] leading-tight">
+                        {lastCounts ? (
+                          <div className="bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] inline-flex items-center gap-2">
+                            <span className="text-green-700">B:{lastCounts.benar}</span>
+                            <span className="text-[#ba1a1a]">S:{lastCounts.salah}</span>
+                            <span className="text-[#727687]">K:{lastCounts.kosong}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[#727687]">Belum ada detail</span>
                         )}
                       </div>
                     </div>
-                  </div>
-                  <div className="p-6 flex flex-col flex-grow justify-between">
-                    <div>
-                      <span
-                        className="text-[12px] font-bold uppercase tracking-wider mb-2 block"
-                        style={{ color: lat.category_color || '#0050cb' }}
+
+                    <div className="grid grid-cols-2 gap-2 mt-auto">
+                      <button
+                        type="button"
+                        onClick={handleLatihanClick}
+                        disabled={inactive || locked}
+                        className={`py-2.5 rounded-md font-bold text-[12px] flex items-center justify-center gap-2 transition-all ${
+                          inactive || locked
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'
+                        }`}
                       >
-                        {lat.category}
-                      </span>
-                      <h3 className="text-[20px] lg:text-[24px] font-semibold text-[#191b24] mb-2">{lat.title}</h3>
-                      <p className="text-[13px] lg:text-[14px] text-[#424656] mb-3">{lat.description}</p>
-                      
-                      <div className="flex flex-wrap items-center gap-4 mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: lat.icon_bg_color || '#0050cb' }}>task_alt</span>
-                          <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">{lat.soal_count || 0} SOAL</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="material-symbols-outlined text-[16px] opacity-60" style={{ color: lat.icon_bg_color || '#0050cb' }}>sports_score</span>
-                          <span className="text-[11px] lg:text-[12px] font-bold uppercase tracking-wider">
-                            B: +{lat.points_correct ?? 4} | S: {lat.points_incorrect ?? -1} | K: {lat.points_unanswered ?? 0}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {lat.user_history?.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-dashed border-[#e5e2e3] text-left">
-                          <h4 className="text-[10px] font-bold text-[#727687] uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                            <span className="material-symbols-outlined text-xs">history</span>
-                            Riwayat Nilai
-                          </h4>
-                          <div className="flex flex-wrap gap-1.5">
-                            {lat.user_history.map((attempt, index) => (
-                              <span
-                                key={attempt.id}
-                                className="inline-flex items-center bg-[#faf8ff] border border-[#c2c6d8]/60 px-2 py-1 rounded-md text-[11px] font-semibold text-[#424656]"
-                              >
-                                Poin: <strong className="font-extrabold text-[#0050cb] ml-0.5">{attempt.score}</strong>
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                        {lastScore ? 'Mulai Lagi' : 'Mulai'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => lastAttempt && navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lastAttempt.id}`)}
+                        disabled={!lastAttempt}
+                        className={`py-2.5 rounded-md font-bold text-[12px] border transition-all flex items-center justify-center gap-2 ${
+                          lastAttempt
+                            ? 'border-[#c2c6d8] text-[#424656] hover:bg-[#f2f3ff]'
+                            : 'border-[#e5e2e3] text-gray-400 cursor-not-allowed'
+                        }`}
+                      >
+                        Hasil
+                      </button>
                     </div>
-                    {(lat.button_style || 'filled') === 'filled' ? (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleLatihanClick(); }}
-                        disabled={inactive || locked}
-                        className={`w-full py-3 rounded-lg font-bold text-[14px] flex items-center justify-center gap-2 transition-colors mt-4 ${inactive || locked ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'}`}
-                      >
-                        {lat.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Latihan'} <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleLatihanClick(); }}
-                        disabled={inactive || locked}
-                        className={`w-full border-2 py-3 rounded-lg font-bold text-[14px] transition-colors mt-4 flex items-center justify-center gap-2 ${inactive || locked ? 'border-gray-200 text-gray-500 cursor-not-allowed' : 'border-[#0050cb] text-[#0050cb] hover:bg-[#0050cb]/5'}`}
-                      >
-                        {lat.user_history?.length > 0 ? 'Mulai Lagi' : 'Mulai Latihan'}
-                      </button>
-                    )}
-                    {lat.user_history?.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lat.user_history[0].id}`); }}
-                        className="w-full border border-[#0050cb] text-[#0050cb] py-3 rounded-lg font-bold text-[14px] mt-2 flex items-center justify-center gap-2 hover:bg-[#0050cb]/5 transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[16px]">visibility</span>
-                        Hasil Terakhir
-                      </button>
-                    )}
                   </div>
-                </div>
                 );
               })
             ) : (

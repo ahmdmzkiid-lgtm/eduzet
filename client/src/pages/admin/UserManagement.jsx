@@ -328,6 +328,13 @@ const UserManagement = () => {
                       >
                         <span className="material-symbols-outlined">visibility</span>
                       </button>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(u.id); toast.success('ID User disalin'); }}
+                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-surface-container-high rounded-full transition-colors"
+                        title="Salin ID"
+                      >
+                        <span className="material-symbols-outlined">content_copy</span>
+                      </button>
                     </div>
                   </td>
                 </tr>

@@ -5,6 +5,7 @@ import { settingsService, subscriptionService, activityService } from '../servic
 import toast, { Toaster } from 'react-hot-toast';
 import ChatWidget from '../components/ChatWidget';
 import Footer from '../components/Footer';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const DEFAULT_SCHEDULE = [
   { day: 'SEN', date: '12', title: 'Tryout Penalaran Umum', time: '09:00 - 11:30', active: true },
@@ -55,11 +56,7 @@ const ScrollNavbar = ({ user, isAdmin, onLogout }) => {
           </nav>
         </div>
         <div className="flex items-center gap-3 sm:gap-4">
-
-          <button className={`relative p-2 rounded-full transition-all ${txt2}`}>
-            <span className="material-symbols-outlined">notifications</span>
-            <span className="absolute top-2 right-2 block h-2 w-2 rounded-full bg-[#a33200] ring-2 ring-white/20"></span>
-          </button>
+          <NotificationDropdown iconClassName={`${txt2} hover:bg-white/10`} />
           <div className={`hidden sm:flex items-center gap-3 pl-4 border-l ${scrolled ? 'border-[#c2c6d8]/30' : 'border-white/20'}`}>
             <div className="hidden sm:flex flex-col items-center justify-center">
               <p className={`text-[14px] font-medium ${scrolled ? 'text-[#191b24]' : 'text-white'}`}>{user?.name?.split(' ')[0]}</p>

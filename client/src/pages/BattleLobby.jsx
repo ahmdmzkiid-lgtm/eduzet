@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import ChatWidget from '../components/ChatWidget';
 import Footer from '../components/Footer';
+import NotificationDropdown from '../components/NotificationDropdown';
 
 const SUBJECT_ORDER = [
   'penalaran umum',
@@ -220,6 +221,7 @@ const BattleLobby = () => {
                   </span>
                 )}
               </div>
+              <NotificationDropdown />
             </div>
             <button onClick={handleLogout} className="hidden sm:flex text-[#424656] hover:text-[#ba1a1a]">
               <span className="material-symbols-outlined text-[20px]">logout</span>
