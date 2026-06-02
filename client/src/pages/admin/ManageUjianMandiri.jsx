@@ -611,7 +611,32 @@ export default function ManageUjianMandiri() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {pkg.points_unanswered ?? 0}</span>
                             </div>
                           </div>
-                          <div className="hidden" />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openManageSoal('tryout', ujian.id, pkg)}
+                              className="w-9 h-9 rounded-xl bg-[#0050cb]/10 text-[#0050cb] hover:bg-[#0050cb] hover:text-white flex items-center justify-center transition-all shadow-sm shadow-[#0050cb]/5"
+                              title="Kelola Soal"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">quiz</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openTryoutModal(ujian.id, pkg)}
+                              className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-all"
+                              title="Edit Paket"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTryout(ujian.id, pkg.id)}
+                              className="w-9 h-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-all"
+                              title="Hapus Paket"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -672,7 +697,32 @@ export default function ManageUjianMandiri() {
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {lat.points_unanswered ?? 0}</span>
                             </div>
                           </div>
-                          <div className="hidden" />
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => openManageSoal('latihan', ujian.id, lat)}
+                              className="w-9 h-9 rounded-xl bg-[#0050cb]/10 text-[#0050cb] hover:bg-[#0050cb] hover:text-white flex items-center justify-center transition-all shadow-sm shadow-[#0050cb]/5"
+                              title="Kelola Soal"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">quiz</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openLatihanModal(ujian.id, lat)}
+                              className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-all"
+                              title="Edit Latihan"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLatihan(ujian.id, lat.id)}
+                              className="w-9 h-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-all"
+                              title="Hapus Latihan"
+                            >
+                              <span className="material-symbols-outlined text-[18px]">delete</span>
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
