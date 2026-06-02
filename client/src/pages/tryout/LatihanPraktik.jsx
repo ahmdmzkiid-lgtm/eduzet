@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { soalService, subjectService, activityService } from '../../services/api';
+import { soalService, subjectService, activityService, socialService } from '../../services/api';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import QuestionGrid from '../../components/tryout/QuestionGrid';
 import SubmitConfirmModal from '../../components/SubmitConfirmModal';
 import Calculator from '../../components/tryout/Calculator';
+import SocialFollowModal from '../../components/SocialFollowModal';
+import LatihanPreRequirementModal from '../../components/LatihanPreRequirementModal';
 
 const LatihanPraktik = () => {
   const navigate = useNavigate();
@@ -26,6 +29,8 @@ const LatihanPraktik = () => {
   const [showCalculator, setShowCalculator] = useState(false);
   const [showNavDrawer, setShowNavDrawer] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [showPreModal, setShowPreModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,7 +60,12 @@ const LatihanPraktik = () => {
         }
       } catch (err) {
         console.error(err);
-        if (err.response?.data?.code === 'FREE_LIMIT_REACHED') {
+        const code = err.response?.data?.code;
+        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+          setShowPreModal(true);
+          setShowSocialModal(true);
+          setError('FREE_LIMIT_REQUIRE_SOCIAL');
+        } else if (code === 'FREE_LIMIT_REACHED') {
           setError('FREE_LIMIT_REACHED');
         } else {
           setError(err.response?.data?.error || 'Gagal memuat latihan');
@@ -66,6 +76,32 @@ const LatihanPraktik = () => {
     };
     if (subjectId) fetchData();
   }, [subjectId, topicId]);
+
+  const handleVerified = async () => {
+    try {
+      // retry fetch after verified
+      setLoading(true);
+      setError(null);
+      const params = { subject_id: subjectId, limit: 100 };
+      if (topicId) params.topic_id = topicId;
+      const [soalRes, subRes] = await Promise.all([
+        soalService.list(params),
+        subjectService.list()
+      ]);
+      const qs = Array.isArray(soalRes.data?.data) ? soalRes.data.data : [];
+      setQuestions(qs);
+      const subj = (subRes.data?.data || []).find(s => s.id === subjectId);
+      setSubjectName(subj?.title || subj?.name || 'Latihan');
+      setError(null);
+      setShowSocialModal(false);
+      setShowPreModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || 'Gagal memuat latihan');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // scroll listener removed - fixed header style
 
@@ -158,6 +194,45 @@ const LatihanPraktik = () => {
           <div className="w-14 h-14 border-4 border-[#0050cb] border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="mt-5 text-[#424656] font-medium text-[15px]">Memuat soal...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (error === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+    return (
+      <div className="min-h-screen bg-[#faf8ff] flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white rounded-3xl p-8 border border-[#c2c6d8]/30 shadow-lg text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#0050cb]/10 flex items-center justify-center text-[#0050cb]">
+            <span className="material-symbols-outlined text-[32px]">favorite</span>
+          </div>
+          <h2 className="text-2xl font-bold text-[#191b24] mb-2">Verifikasi Sosial Diperlukan</h2>
+          <p className="text-sm text-[#424656] mb-6">Follow & repost IG/X sekali saja. Setelah disetujui admin, akses latihan jadi bebas (latihan yang sudah dikerjakan tetap 1x).</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              className="px-5 py-3 rounded-xl text-white font-semibold hover:shadow-lg active:scale-[0.99] transition"
+              style={{ background: 'linear-gradient(135deg, #0050cb, #3b82f6)' }}
+              onClick={() => { setShowPreModal(true); setShowSocialModal(true); }}
+            >
+              Buka Verifikasi
+            </button>
+            <button
+              className="px-5 py-3 rounded-xl border border-[#e5e7eb] text-[#424656] font-semibold hover:bg-gray-50"
+              onClick={() => navigate('/dashboard')}
+            >
+              Kembali
+            </button>
+          </div>
+        </div>
+        <LatihanPreRequirementModal
+          open={showPreModal}
+          onClose={() => setShowPreModal(false)}
+          onProceed={() => setShowSocialModal(true)}
+        />
+        <SocialFollowModal
+          open={showSocialModal}
+          onClose={() => setShowSocialModal(false)}
+          onVerified={handleVerified}
+        />
       </div>
     );
   }

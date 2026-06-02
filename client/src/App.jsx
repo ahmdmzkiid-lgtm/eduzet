@@ -42,6 +42,7 @@ import UjianMandiri from './pages/UjianMandiri';
 import UjianMandiriDetail from './pages/UjianMandiriDetail';
 import ManageUjianMandiri from './pages/admin/ManageUjianMandiri';
 import ManageTryoutRegistrations from './pages/admin/ManageTryoutRegistrations';
+import ManageSocialVerifications from './pages/admin/ManageSocialVerifications';
 import LatihanSoalUM from './pages/LatihanSoalUM';
 import LatihanSoalUMResult from './pages/LatihanSoalUMResult';
 import TryoutSessionUM from './pages/TryoutSessionUM';
@@ -119,6 +120,7 @@ function App() {
               <Route path="battle" element={<ManageBattleSoal />} />
               <Route path="ujian-mandiri" element={<ManageUjianMandiri />} />
               <Route path="tryout-registrations" element={<ManageTryoutRegistrations />} />
+              <Route path="social-verifications" element={<ManageSocialVerifications />} />
               <Route path="activity" element={<AdminActivity />} />
               <Route path="notifications" element={<AdminNotification />} />
             </Route>

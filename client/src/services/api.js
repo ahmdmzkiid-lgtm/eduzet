@@ -124,6 +124,13 @@ export const activityService = {
   submitLatihan: (data) => api.post('/activity/latihan/submit', data),
 };
 
+export const socialService = {
+  submitVerification: (data) => api.post('/social/verify', data),
+  getStatus: () => api.get('/social/status'),
+  listPending: () => api.get('/social/admin/requests'),
+  reviewRequest: (id, payload) => api.patch(`/social/admin/requests/${id}`, payload),
+};
+
 export const chatService = {
   sendMessage: (message, history) => api.post('/chat', { message, history }),
   discussQuestion: (message, questionContext, history) => api.post('/chat/discuss', { message, questionContext, history }),

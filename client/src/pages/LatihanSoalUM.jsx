@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import { useAuth } from '../hooks/useAuth';
 import { ujianMandiriService, activityService } from '../services/api';
 import QuestionGrid from '../components/tryout/QuestionGrid';
 import SubmitConfirmModal from '../components/SubmitConfirmModal';
 import Calculator from '../components/tryout/Calculator';
+import SocialFollowModal from '../components/SocialFollowModal';
+import LatihanPreRequirementModal from '../components/LatihanPreRequirementModal';
 
 const LatihanSoalUM = () => {
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ const LatihanSoalUM = () => {
   const [showCalculator, setShowCalculator] = useState(false);
   const [showNavDrawer, setShowNavDrawer] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showSocialModal, setShowSocialModal] = useState(false);
+  const [showPreModal, setShowPreModal] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,7 +55,12 @@ const LatihanSoalUM = () => {
         setQuestions(qRes.data.data || []);
       } catch (err) {
         console.error(err);
-        if (err.response?.data?.code === 'FREE_LIMIT_REACHED') {
+        const code = err.response?.data?.code;
+        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+          setShowPreModal(true);
+          setShowSocialModal(true);
+          setError('FREE_LIMIT_REQUIRE_SOCIAL');
+        } else if (code === 'FREE_LIMIT_REACHED') {
           setError('FREE_LIMIT_REACHED');
         } else {
           navigate(`/ujian-mandiri/${ujianId}`);
@@ -61,6 +71,31 @@ const LatihanSoalUM = () => {
     };
     if (ujianId && latihanId) fetchData();
   }, [ujianId, latihanId, navigate]);
+
+  const handleVerified = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const [ujianRes, latihanRes] = await Promise.all([
+        ujianMandiriService.getById(ujianId),
+        ujianMandiriService.getLatihan(ujianId),
+      ]);
+      const ujianData = ujianRes.data.data;
+      const latihanList = latihanRes.data.data || [];
+      const latihanData = latihanList.find(l => String(l.id) === String(latihanId));
+      setUjian(ujianData);
+      setLatihan(latihanData);
+      const qRes = await ujianMandiriService.getQuestions({ parent_type: 'latihan_soal', parent_id: latihanId });
+      setQuestions(qRes.data.data || []);
+      setShowSocialModal(false);
+      setShowPreModal(false);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || 'Gagal memuat latihan');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOptionSelect = (choiceId) => {
     setAnswers({ ...answers, [currentIndex]: choiceId });
@@ -177,7 +212,7 @@ const LatihanSoalUM = () => {
           </div>
           <h2 className="text-[28px] font-bold text-[#191b24] mb-3 tracking-tight">Akses Latihan Terbatas</h2>
           <p className="text-[15px] text-[#424656] leading-relaxed mb-8">
-            Akun Gratis kamu memiliki batas untuk mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke <strong className="text-[#0050cb]">Premium</strong> sekarang untuk mengakses ratusan bank soal tanpa batasan!
+            Akun Gratis kamu memiliki batas untuk mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke <strong className="text-[#0050cb]">Premium</strong> sekarang untuk accessing ratusan bank soal tanpa batasan!
           </p>
 
           {/* Features list */}
@@ -213,6 +248,45 @@ const LatihanSoalUM = () => {
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (error === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+    return (
+      <div className="min-h-screen bg-[#faf8ff] flex items-center justify-center p-6">
+        <div className="max-w-xl w-full bg-white rounded-3xl p-8 border border-[#c2c6d8]/30 shadow-lg text-center animate-in zoom-in-95 duration-200">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-[#0050cb]/10 flex items-center justify-center text-[#0050cb]">
+            <span className="material-symbols-outlined text-[32px]">favorite</span>
+          </div>
+          <h2 className="text-2xl font-bold text-[#191b24] mb-2">Verifikasi Sosial Diperlukan</h2>
+          <p className="text-sm text-[#424656] mb-6">Follow & repost IG/X sekali saja. Setelah disetujui admin, akses latihan jadi bebas (latihan yang sudah dikerjakan tetap 1x).</p>
+          <div className="flex gap-3 justify-center">
+            <button
+              className="px-5 py-3 rounded-xl text-white font-semibold hover:shadow-lg active:scale-[0.99] transition"
+              style={{ background: 'linear-gradient(135deg, #0050cb, #3b82f6)' }}
+              onClick={() => { setShowPreModal(true); setShowSocialModal(true); }}
+            >
+              Buka Verifikasi
+            </button>
+            <button
+              className="px-5 py-3 rounded-xl border border-[#e5e7eb] text-[#424656] font-semibold hover:bg-gray-50"
+              onClick={() => navigate(`/ujian-mandiri/${ujianId}`)}
+            >
+              Kembali
+            </button>
+          </div>
+        </div>
+        <LatihanPreRequirementModal
+          open={showPreModal}
+          onClose={() => setShowPreModal(false)}
+          onProceed={() => setShowSocialModal(true)}
+        />
+        <SocialFollowModal
+          open={showSocialModal}
+          onClose={() => setShowSocialModal(false)}
+          onVerified={handleVerified}
+        />
       </div>
     );
   }
@@ -439,6 +513,16 @@ const LatihanSoalUM = () => {
         total={totalQuestions}
       />
       {showCalculator && <Calculator onClose={() => setShowCalculator(false)} />}
+      <LatihanPreRequirementModal
+        open={showPreModal}
+        onClose={() => setShowPreModal(false)}
+        onProceed={() => setShowSocialModal(true)}
+      />
+      <SocialFollowModal
+        open={showSocialModal}
+        onClose={() => setShowSocialModal(false)}
+        onVerified={handleVerified}
+      />
     </div>
   );
 };

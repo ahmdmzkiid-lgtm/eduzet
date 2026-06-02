@@ -39,6 +39,7 @@ const AdminDashboard = () => {
     { path: '/admin/battle', icon: 'swords', label: 'Manage Battle 1vs1' },
     { path: '/admin/ujian-mandiri', icon: 'school', label: 'Manage Ujian Mandiri' },
     { path: '/admin/tryout-registrations', icon: 'verified', label: 'Verifikasi Tryout' },
+    { path: '/admin/social-verifications', icon: 'favorite', label: 'Verifikasi Latihan' },
     { path: '/admin/users', icon: 'group', label: 'Users' },
     { path: '/admin/settings', icon: 'ad_units', label: 'Banner' },
     { path: '/admin/notifications', icon: 'campaign', label: 'Notifikasi' },

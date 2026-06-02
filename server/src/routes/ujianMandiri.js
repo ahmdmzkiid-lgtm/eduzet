@@ -28,28 +28,64 @@ router.patch('/banner', [verifyToken, verifyAdmin], async (req, res, next) => {
 
 // ========== QUESTIONS (must be BEFORE /:id to avoid catch-all) ==========
 
+// Helper: check free plan gating for latihan (shared with UTBK logic)
+async function checkLatihanAccess(userId) {
+  const countRes = await pool.query(
+    'SELECT COUNT(*) AS count FROM latihan_sessions WHERE user_id = $1 AND submitted_at IS NOT NULL',
+    [userId]
+  );
+  const totalSessions = parseInt(countRes.rows[0]?.count || 0, 10);
+
+  const verRes = await pool.query(
+    `SELECT status FROM user_social_verifications 
+     WHERE user_id = $1 AND context = 'latihan'
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  const verified = verRes.rows[0]?.status === 'approved';
+
+  if (verified) return { allowed: true, totalSessions, verified: true };
+  if (totalSessions >= 2) {
+    return { allowed: false, totalSessions, verified: false, code: 'FREE_LIMIT_REQUIRE_SOCIAL' };
+  }
+  return { allowed: true, totalSessions, verified: false };
+}
+
 // Get questions for a tryout package or latihan
 router.get('/questions', verifyToken, async (req, res, next) => {
   try {
     const { tryout_package_id, latihan_id, parent_type, parent_id } = req.query;
 
-    // Free plan practice limit check
+    // Free plan practice limit check (global, not per-latihan)
     if (!tryout_package_id && (latihan_id || parent_type === 'latihan_soal')) {
       const userRes = await pool.query('SELECT current_plan FROM users WHERE id = $1', [req.user.id]);
       const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
 
       if (currentPlan === 'gratis') {
         const targetLatihanId = latihan_id || parent_id;
-        const latihanCountRes = await pool.query(
-          'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND latihan_id = $2',
-          [req.user.id, targetLatihanId]
-        );
-        const totalLatihan = parseInt(latihanCountRes.rows[0].count);
-        if (totalLatihan >= 1) {
+        if (targetLatihanId) {
+          const latihanCountRes = await pool.query(
+            'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND latihan_id = $2 AND submitted_at IS NOT NULL',
+            [req.user.id, targetLatihanId]
+          );
+          const totalLatihan = parseInt(latihanCountRes.rows[0].count, 10);
+          if (totalLatihan >= 1) {
+            return res.status(403).json({
+              success: false,
+              error: 'Akun gratis hanya dapat mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke Premium untuk akses tanpa batas.',
+              code: 'FREE_LIMIT_REACHED'
+            });
+          }
+        }
+
+        const access = await checkLatihanAccess(req.user.id);
+        if (!access.allowed) {
           return res.status(403).json({
             success: false,
-            error: 'Akun gratis hanya dapat mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke Premium untuk akses tanpa batas.',
-            code: 'FREE_LIMIT_REACHED'
+            error: 'Akun gratis perlu verifikasi follow/repost sebelum melanjutkan latihan.',
+            code: access.code || 'FREE_LIMIT_REQUIRE_SOCIAL',
+            total_sessions: access.totalSessions,
+            verified: access.verified,
           });
         }
       }

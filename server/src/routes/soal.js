@@ -3,6 +3,32 @@ const router = express.Router();
 const { pool } = require('../config/db');
 const { verifyToken, verifyAdmin } = require('../middleware/auth');
 
+// Helper: check free plan gating for latihan (UTBK)
+async function checkLatihanAccess(userId) {
+  // Count total submitted latihan sessions (UTBK + UM) for this user
+  const countRes = await pool.query(
+    'SELECT COUNT(*) AS count FROM latihan_sessions WHERE user_id = $1 AND submitted_at IS NOT NULL',
+    [userId]
+  );
+  const totalSessions = parseInt(countRes.rows[0]?.count || 0, 10);
+
+  // Check social verification status
+  const verRes = await pool.query(
+    `SELECT status FROM user_social_verifications 
+     WHERE user_id = $1 AND context = 'latihan'
+     ORDER BY created_at DESC LIMIT 1`,
+    [userId]
+  );
+  const verified = verRes.rows[0]?.status === 'approved';
+
+  if (verified) return { allowed: true, totalSessions, verified: true };
+  // Free users: allow first 2 sessions; block 3rd+ until verified
+  if (totalSessions >= 2) {
+    return { allowed: false, totalSessions, verified: false, code: 'FREE_LIMIT_REQUIRE_SOCIAL' };
+  }
+  return { allowed: true, totalSessions, verified: false };
+}
+
 // List Soal
 router.get('/', verifyToken, async (req, res, next) => {
   try {
@@ -14,23 +40,24 @@ router.get('/', verifyToken, async (req, res, next) => {
       const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
 
       if (currentPlan === 'gratis') {
+        // 1. One-time check per exercise: Free users cannot repeat completed topics/subjects
         let completed = 0;
         if (topic_id) {
           const res = await pool.query(
-            'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND topic_id = $2',
+            'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND topic_id = $2 AND submitted_at IS NOT NULL',
             [req.user.id, topic_id]
           );
           completed = parseInt(res.rows[0].count);
         } else if (subject_id) {
           const res = await pool.query(
-            'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND subject_id = $2',
+            'SELECT COUNT(*) as count FROM latihan_sessions WHERE user_id = $1 AND subject_id = $2 AND submitted_at IS NOT NULL',
             [req.user.id, subject_id]
           );
           completed = parseInt(res.rows[0].count);
         } else if (subject_name) {
           const res = await pool.query(
             `SELECT COUNT(*) as count FROM latihan_sessions 
-             WHERE user_id = $1 AND (
+             WHERE user_id = $1 AND submitted_at IS NOT NULL AND (
                LOWER(subject_name) = LOWER($2) 
                OR subject_id = (SELECT id FROM subjects WHERE LOWER(name) = LOWER($2) OR LOWER(title) = LOWER($2) LIMIT 1)
              )`,
@@ -44,6 +71,18 @@ router.get('/', verifyToken, async (req, res, next) => {
             success: false,
             error: 'Akun gratis hanya dapat mengerjakan setiap latihan soal sebanyak 1 kali. Upgrade ke Premium untuk akses tanpa batas.',
             code: 'FREE_LIMIT_REACHED'
+          });
+        }
+
+        // 2. Global total sessions check
+        const access = await checkLatihanAccess(req.user.id);
+        if (!access.allowed) {
+          return res.status(403).json({
+            success: false,
+            error: 'Akun gratis perlu verifikasi follow/repost sebelum melanjutkan latihan.',
+            code: access.code || 'FREE_LIMIT_REQUIRE_SOCIAL',
+            total_sessions: access.totalSessions,
+            verified: access.verified,
           });
         }
       }

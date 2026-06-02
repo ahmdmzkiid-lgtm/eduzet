@@ -47,6 +47,7 @@ const battleRoutes = require('./routes/battle');
 const uploadRoutes = require('./routes/upload');
 const ujianMandiriRoutes = require('./routes/ujianMandiri');
 const notificationRoutes = require('./routes/notifications');
+const socialRoutes = require('./routes/social');
 
 // Mount routes
 app.use('/api/auth', authRoutes);
@@ -66,6 +67,7 @@ app.use('/api/battle', battleRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/ujian-mandiri', ujianMandiriRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/social', socialRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
