@@ -3,6 +3,7 @@ import { useTryoutFetch } from '../hooks/useTryoutFetch';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import toast from 'react-hot-toast';
+import MathText from '../components/MathText';
 
 /**
  * CONTOH PENGGUNAAN useTryoutFetch Hook
@@ -196,9 +197,10 @@ const TryoutWithSingleFetch = ({ tryoutPackageId }) => {
                   >
                     {/* QUESTION NUMBER & FLAG */}
                     <div className="flex justify-between items-start mb-4">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        {index + 1}. {question.content?.substring(0, 80)}...
-                      </h3>
+                      <div className="text-lg font-bold text-gray-900 mb-2 flex items-start gap-1">
+                        <span>{index + 1}. </span>
+                        <MathText text={question.content || ''} />
+                      </div>
                       <button
                         onClick={() => handleFlagQuestion(question.id)}
                         className={`
@@ -247,9 +249,9 @@ const TryoutWithSingleFetch = ({ tryoutPackageId }) => {
                               onChange={() => handleSelectAnswer(question.id, choice.id)}
                               className="mt-1"
                             />
-                            <span className="flex-1">
+                            <span className="flex-1 flex items-start gap-1.5">
                               <strong className="text-lg">{choice.label}.</strong>
-                              {' '}{choice.content}
+                              <MathText text={choice.content || ''} />
                             </span>
                           </label>
                         );
@@ -263,7 +265,7 @@ const TryoutWithSingleFetch = ({ tryoutPackageId }) => {
                           📖 Lihat Pembahasan
                         </summary>
                         <div className="mt-3 p-3 bg-blue-50 rounded-lg text-gray-700">
-                          {question.choices[0].explanation}
+                          <MathText text={question.choices[0].explanation || ''} />
                         </div>
                       </details>
                     )}

@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { battleService } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
+import MathText from '../components/MathText';
 
 const BattleGame = () => {
   const navigate = useNavigate();
@@ -373,9 +374,7 @@ const BattleGame = () => {
                     {currentQuestion.difficulty === 'easy' ? 'Mudah' : currentQuestion.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                   </span>
                 </div>
-                <p className="text-[15px] text-[#191b24] leading-relaxed whitespace-pre-line">
-                  {currentQuestion.content}
-                </p>
+                <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion.content || ''} />
                 {currentQuestion.image_url && (
                   <img className="w-full max-h-60 object-contain rounded-xl mt-4 border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
                 )}
@@ -403,7 +402,7 @@ const BattleGame = () => {
                       }`}>
                         {choice.label}
                       </span>
-                      <span className="text-[14px] leading-relaxed text-[#424656]">{choice.content}</span>
+                      <MathText className="text-[14px] leading-relaxed text-[#424656]" text={choice.content || ''} />
                     </button>
                   );
                 })}

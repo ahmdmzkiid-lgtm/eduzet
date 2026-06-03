@@ -3,6 +3,7 @@ import { subjectService, soalService, adminService } from '../../services/api';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
+import MathText from '../../components/MathText';
 
 const ICON_OPTIONS = [
   'calculate', 'psychology', 'menu_book', 'translate', 'functions', 
@@ -509,7 +510,7 @@ const ManageLatihan = () => {
                           {(questionsPagination.page - 1) * 20 + idx + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[15px] text-[#191b24] font-medium line-clamp-2">{q.content}</p>
+                          <MathText className="text-[15px] text-[#191b24] font-medium line-clamp-2" text={q.content || ''} />
                           <div className="flex items-center gap-3 mt-2">
                             <span className={`text-[11px] font-bold uppercase px-2 py-0.5 rounded-md ${
                               q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
@@ -557,10 +558,10 @@ const ManageLatihan = () => {
                                 <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${
                                   c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
                                 }`}>{c.label}</span>
-                                <div>
-                                  <p className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'}>{c.content}</p>
+                                <div className="flex-1 min-w-0">
+                                  <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
                                   {c.is_correct && c.explanation && (
-                                    <p className="text-[12px] text-green-700 mt-1 italic">{c.explanation}</p>
+                                    <MathText className="text-[12px] text-green-700 mt-1 italic block" text={c.explanation} />
                                   )}
                                 </div>
                               </div>
@@ -1031,7 +1032,7 @@ const ManageLatihan = () => {
                         <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold flex-shrink-0 ${
                           c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
                         }`}>{c.label}</span>
-                        <p className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'}>{c.content}</p>
+                        <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
                       </div>
                     ))}
                   </div>

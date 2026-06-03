@@ -4,6 +4,7 @@ import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
 import { ujianMandiriService, soalService } from '../../services/api';
 import { STATUS_OPTIONS, getStatusConfig } from '../../data/ujianMandiriData';
+import MathText from '../../components/MathText';
 
 const DEFAULT_BANNER = {
   badge: 'AKADEMIK 2026', title: 'Eksplorasi Ujian Mandiri 2026',
@@ -1245,7 +1246,7 @@ export default function ManageUjianMandiri() {
                           {idx + 1}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <p className="text-[14px] text-[#191b24] font-medium line-clamp-2">{q.content}</p>
+                          <MathText className="text-[14px] text-[#191b24] font-medium line-clamp-2" text={q.content || ''} />
                           <div className="flex items-center gap-2 mt-2">
                             <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
                               q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
@@ -1302,10 +1303,10 @@ export default function ManageUjianMandiri() {
                                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
                                   c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
                                 }`}>{c.label}</span>
-                                <div>
-                                  <p className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'}>{c.content}</p>
+                                <div className="flex-1 min-w-0">
+                                  <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
                                   {c.is_correct && c.explanation && (
-                                    <p className="text-[11px] text-green-700 mt-1 italic">{c.explanation}</p>
+                                    <MathText className="text-[11px] text-green-700 mt-1 italic block" text={c.explanation} />
                                   )}
                                 </div>
                               </div>
@@ -1375,7 +1376,7 @@ export default function ManageUjianMandiri() {
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
                           c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
                         }`}>{c.label}</span>
-                        <p className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'}>{c.content}</p>
+                        <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
                       </div>
                     ))}
                   </div>

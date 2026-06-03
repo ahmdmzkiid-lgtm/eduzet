@@ -3,6 +3,7 @@ import { bookmarkService } from '../services/api';
 import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
 import toast from 'react-hot-toast';
+import MathText from '../components/MathText';
 
 const Bookmark = () => {
   const [bookmarks, setBookmarks] = useState([]);
@@ -83,7 +84,7 @@ const Bookmark = () => {
                       </button>
                     </div>
 
-                    <div className="text-gray-800 line-clamp-3" dangerouslySetInnerHTML={{ __html: q.content }} />
+                    <MathText className="text-gray-800 line-clamp-3" text={q.content || ''} />
 
                     {!isExpanded && (
                       <div className="mt-4 flex justify-center">
@@ -96,7 +97,7 @@ const Bookmark = () => {
 
                   {isExpanded && (
                     <div className="bg-gray-50 border-t border-gray-200 p-5">
-                      <div className="text-gray-800 mb-5" dangerouslySetInnerHTML={{ __html: q.content }} />
+                      <MathText className="text-gray-800 mb-5" text={q.content || ''} />
                       {q.image_url && (
                         <img src={q.image_url} alt="Question" className="max-h-64 object-contain mb-5 rounded-lg border border-gray-200" />
                       )}
@@ -113,16 +114,15 @@ const Bookmark = () => {
                             <span className={`font-bold ${c.is_correct ? 'text-green-600' : 'text-gray-400'}`}>
                               {c.label}
                             </span>
-                            <span className={c.is_correct ? 'text-gray-800' : 'text-gray-600'} dangerouslySetInnerHTML={{ __html: c.content }} />
+                            <MathText className={c.is_correct ? 'text-gray-800' : 'text-gray-600'} text={c.content || ''} />
                           </div>
                         ))}
                       </div>
 
                       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Penjelasan</h4>
-                      <div
-                        className="bg-white rounded-lg p-4 text-gray-600 border border-gray-200 text-sm leading-relaxed"
-                        dangerouslySetInnerHTML={{ __html: correctChoice?.explanation || 'Belum ada penjelasan.' }}
-                      />
+                      <div className="bg-white rounded-lg p-4 text-gray-600 border border-gray-200 text-sm leading-relaxed">
+                        <MathText text={correctChoice?.explanation || 'Belum ada penjelasan.'} />
+                      </div>
                     </div>
                   )}
                 </div>

@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import SubmitConfirmModal from '../components/SubmitConfirmModal';
 import QuestionGrid from '../components/tryout/QuestionGrid';
 import Calculator from '../components/tryout/Calculator';
+import MathText from '../components/MathText';
 
 const TryoutSessionUM = () => {
   const { ujianId, tryoutId } = useParams();
@@ -390,7 +391,7 @@ const TryoutSessionUM = () => {
                   {currentQuestion.difficulty === 'easy' ? 'Mudah' : currentQuestion.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                 </span>
               </div>
-              <p className="text-[15px] text-[#191b24] leading-relaxed whitespace-pre-line">{currentQuestion.content}</p>
+              <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion.content || ''} />
               {currentQuestion.image_url && (
                 <div className="mt-4">
                   <img className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
@@ -414,7 +415,7 @@ const TryoutSessionUM = () => {
                     ? 'bg-[#0050cb] text-white shadow-sm shadow-[#0050cb]/20'
                     : 'bg-[#ecedfa] text-[#424656] group-hover:bg-[#dae1ff]'
                   }`}>{choice.label}</span>
-                  <span className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`}>{choice.content}</span>
+                  <MathText className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
                 </button>
               ))}
             </div>

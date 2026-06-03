@@ -8,6 +8,7 @@ import SubmitConfirmModal from '../../components/SubmitConfirmModal';
 import Calculator from '../../components/tryout/Calculator';
 import SocialFollowModal from '../../components/SocialFollowModal';
 import LatihanPreRequirementModal from '../../components/LatihanPreRequirementModal';
+import MathText from '../../components/MathText';
 
 const LatihanPraktik = () => {
   const navigate = useNavigate();
@@ -392,9 +393,7 @@ const LatihanPraktik = () => {
               {currentQuestion.difficulty === 'easy' ? 'Mudah' : currentQuestion.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
             </span>
           </div>
-          <p className="text-[15px] text-[#191b24] leading-relaxed whitespace-pre-line">
-            {currentQuestion.content}
-          </p>
+          <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion.content || ''} />
           {currentQuestion.image_url && (
             <div className="mt-4">
               <img className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
@@ -421,9 +420,7 @@ const LatihanPraktik = () => {
               }`}>
                 {choice.label}
               </span>
-              <span className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`}>
-                {choice.content}
-              </span>
+              <MathText className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
             </button>
           ))}
         </div>

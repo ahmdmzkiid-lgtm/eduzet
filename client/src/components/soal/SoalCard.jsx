@@ -1,5 +1,6 @@
 import React from 'react';
 import Badge from '../ui/Badge';
+import MathText from '../MathText';
 
 const SoalCard = ({ question, index, onBookmarkToggle, isBookmarked }) => {
   if (!question) return null;
@@ -35,7 +36,7 @@ const SoalCard = ({ question, index, onBookmarkToggle, isBookmarked }) => {
       </div>
 
       <div className="prose prose-invert max-w-none mb-8">
-        <div className="text-lg leading-relaxed text-slate-200" dangerouslySetInnerHTML={{ __html: question.content }} />
+        <MathText className="text-lg leading-relaxed text-slate-200" text={question.content || ''} />
         {question.image_url && (
           <img src={question.image_url} alt="Question image" className="mt-4 rounded-lg max-h-64 object-contain" />
         )}

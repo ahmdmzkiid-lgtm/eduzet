@@ -3,6 +3,7 @@ import { Link, useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { tryoutService } from '../../services/api';
 import DiscussQuestionModal from '../../components/DiscussQuestionModal';
+import MathText from '../../components/MathText';
 
 const TryoutResult = () => {
   const { sessionId } = useParams();
@@ -615,9 +616,7 @@ const TryoutResult = () => {
                     </span>
                   </div>
                   <div className="max-w-4xl">
-                    <p className="text-[15px] font-semibold text-[#191b24] mb-4 leading-relaxed">
-                      {question.content}
-                    </p>
+                    <MathText className="text-[15px] font-semibold text-[#191b24] mb-4 leading-relaxed" text={question.content || ''} />
 
                     {/* Answer Choices */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
@@ -644,10 +643,10 @@ const TryoutResult = () => {
                         return (
                           <div key={choice.id || choice.label} className={cardClass}>
                             <div className="flex justify-between items-center">
-                              <p className={contentClass}>
-                                <span className="font-bold mr-3">{choice.label}.</span>
-                                {choice.content}
-                              </p>
+                              <div className={`${contentClass} flex items-start gap-1.5`}>
+                                <span className="font-bold shrink-0">{choice.label}.</span>
+                                <MathText text={choice.content || ''} />
+                              </div>
                               {icon && <span>{icon}</span>}
                             </div>
                             {isChosen && !isCorrectChoice && (
@@ -668,9 +667,7 @@ const TryoutResult = () => {
                           <h4 className="text-[11px] font-semibold text-[#0050cb] uppercase tracking-widest mb-2">
                             {question.isCorrect ? 'Penjelasan Strategis' : 'Analisis Pedagogis'}
                           </h4>
-                          <div className="text-[13px] text-[#424656] leading-relaxed whitespace-pre-line">
-                            {question.explanation}
-                          </div>
+                          <MathText className="text-[13px] text-[#424656] leading-relaxed" text={question.explanation || ''} />
                         </div>
                         
                         {/* Elegant Chat Button */}

@@ -1,4 +1,5 @@
 import React from 'react';
+import MathText from '../MathText';
 
 const PilihanJawaban = ({ choices, selectedChoiceId, onSelect, showFeedback }) => {
   return (
@@ -36,7 +37,7 @@ const PilihanJawaban = ({ choices, selectedChoiceId, onSelect, showFeedback }) =
             <span className={`shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm transition-colors ${labelBg}`}>
               {choice.label}
             </span>
-            <div className="flex-1 mt-1 text-slate-200 leading-relaxed" dangerouslySetInnerHTML={{ __html: choice.content }} />
+            <MathText className="flex-1 mt-1 text-slate-200 leading-relaxed" text={choice.content || ''} />
             
             {showFeedback && isCorrect && (
               <svg className="shrink-0 w-6 h-6 text-accent-emerald" fill="none" viewBox="0 0 24 24" stroke="currentColor">

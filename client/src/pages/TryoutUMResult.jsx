@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { ujianMandiriService } from '../services/api';
 import DiscussQuestionModal from '../components/DiscussQuestionModal';
+import MathText from '../components/MathText';
 
 const TryoutUMResult = () => {
   const navigate = useNavigate();
@@ -246,7 +247,7 @@ const TryoutUMResult = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed whitespace-pre-line">{qr.content}</h3>
+                  <MathText className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed" text={qr.content || ''} />
 
                   {(qr.imageUrl || qr.image_url) && (
                     <div className="mb-4">
@@ -284,7 +285,7 @@ const TryoutUMResult = () => {
                         <div key={choice.id} className={`relative flex items-center p-3 rounded-xl ${borderClass}`}>
                           {tag}
                           <span className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 text-[12px] font-bold flex-shrink-0 ${labelClass}`}>{choice.label}</span>
-                          <span className={`text-[13px] flex-1 ${textClass}`}>{choice.content}</span>
+                          <MathText className={`text-[13px] flex-1 ${textClass}`} text={choice.content || ''} />
                           {icon && <span className="flex-shrink-0 ml-2">{icon}</span>}
                         </div>
                       );
@@ -298,7 +299,7 @@ const TryoutUMResult = () => {
                           <span className="material-symbols-outlined text-[18px]">lightbulb</span>
                           <span className="text-[11px] uppercase tracking-wider font-bold">Penjelasan</span>
                         </div>
-                        <p className="text-[13px] text-[#424656] leading-relaxed whitespace-pre-line">{qr.correctChoice?.explanation || qr.explanation}</p>
+                        <MathText className="text-[13px] text-[#424656] leading-relaxed" text={qr.correctChoice?.explanation || qr.explanation || ''} />
                       </div>
                       <div className="md:w-60 flex-shrink-0">
                         <button onClick={() => openDiscussion(qr)} className="w-full h-full min-h-[90px] bg-[#faf8ff] border-2 border-dashed border-[#006688]/20 rounded-xl p-4 flex flex-col items-center justify-center text-center group hover:border-[#006688] hover:bg-[#006688]/5 transition-all duration-300">

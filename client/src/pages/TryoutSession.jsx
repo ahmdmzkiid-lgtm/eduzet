@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import SubmitConfirmModal from '../components/SubmitConfirmModal';
 import QuestionGrid from '../components/tryout/QuestionGrid';
 import Calculator from '../components/tryout/Calculator';
+import MathText from '../components/MathText';
 
 const TryoutSession = () => {
   const { sessionId } = useParams();
@@ -434,9 +435,7 @@ const TryoutSession = () => {
             </span>
             <span className="text-[12px] font-medium text-[#727687] bg-[#ecedfa] px-2.5 py-0.5 rounded-md">{currentQuestion?.difficulty || 'medium'}</span>
           </div>
-          <p className="text-[15px] text-[#191b24] leading-relaxed whitespace-pre-line">
-            {currentQuestion?.content}
-          </p>
+          <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion?.content || ''} />
           {currentQuestion?.image_url && (
             <div className="mt-4">
               <img className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
@@ -463,9 +462,7 @@ const TryoutSession = () => {
               }`}>
                 {choice.label}
               </span>
-              <span className={`text-[14px] leading-relaxed ${answers[globalKey] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`}>
-                {choice.content}
-              </span>
+              <MathText className={`text-[14px] leading-relaxed ${answers[globalKey] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
             </button>
           ))}
         </div>

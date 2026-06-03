@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import DiscussQuestionModal from '../components/DiscussQuestionModal';
+import MathText from '../components/MathText';
 
 const HasilTryout = () => {
   const { sessionId } = useParams();
@@ -119,7 +120,7 @@ const HasilTryout = () => {
             <div key={i} className="border border-slate-700/50 rounded-xl p-5 bg-slate-800/30">
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="flex-1">
-                  <div className="text-slate-200 mb-4" dangerouslySetInnerHTML={{ __html: wa.content }} />
+                  <MathText className="text-slate-200 mb-4" text={wa.content || ''} />
                   
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                     <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-lg">
@@ -134,7 +135,7 @@ const HasilTryout = () => {
                   
                   <div className="bg-slate-800 rounded-lg p-4 mt-2 border border-slate-700">
                     <span className="text-xs text-slate-400 font-semibold block mb-2">PENJELASAN</span>
-                    <div className="text-slate-300 text-sm leading-relaxed" dangerouslySetInnerHTML={{ __html: wa.explanation }} />
+                    <MathText className="text-slate-300 text-sm leading-relaxed" text={wa.explanation || ''} />
                   </div>
                 </div>
 

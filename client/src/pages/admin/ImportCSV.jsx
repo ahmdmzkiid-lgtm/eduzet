@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { adminService, subjectService, tryoutService } from '../../services/api';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
+import MathText from '../../components/MathText';
 
 const ImportCSV = () => {
   const [subjects, setSubjects] = useState([]);
@@ -456,7 +457,11 @@ const ImportCSV = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4 font-body-md text-body-md text-on-surface max-w-xs">
-                            <span className="line-clamp-2">{soal || <span className="text-error italic">Kosong</span>}</span>
+                            {soal ? (
+                              <MathText className="line-clamp-2" text={soal} />
+                            ) : (
+                              <span className="text-error italic">Kosong</span>
+                            )}
                           </td>
                           <td className="px-6 py-4">
                             {kunci && ['A','B','C','D','E'].includes(kunci) ? (
@@ -470,7 +475,7 @@ const ImportCSV = () => {
                           </td>
                           <td className="px-6 py-4">
                             {pembahasan ? (
-                              <span className="line-clamp-1 text-label-sm text-on-surface-variant max-w-[150px] inline-block">{pembahasan.substring(0, 40)}...</span>
+                              <MathText className="line-clamp-1 text-label-sm text-on-surface-variant max-w-[150px] inline-block" text={pembahasan} />
                             ) : (
                               <span className="text-error font-label-sm italic">Kosong</span>
                             )}

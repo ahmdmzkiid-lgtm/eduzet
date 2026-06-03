@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
+import MathText from '../components/MathText';
 
 /**
  * TryoutSession - Menggunakan useTryoutFetch Hook
@@ -196,10 +197,10 @@ const TryoutSessionNew = () => {
                     {/* QUESTION HEADER */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-gray-900 mb-2">
-                          {index + 1}. {question.content?.substring(0, 100)}
-                          {question.content?.length > 100 ? '...' : ''}
-                        </h3>
+                        <div className="text-lg font-bold text-gray-900 mb-2 flex items-start gap-1">
+                          <span>{index + 1}. </span>
+                          <MathText text={question.content || ''} />
+                        </div>
                       </div>
                       <button
                         onClick={() => toggleFlag(question.id)}
@@ -252,9 +253,9 @@ const TryoutSessionNew = () => {
                               }}
                               className="mt-1 cursor-pointer"
                             />
-                            <span className="flex-1">
+                            <span className="flex-1 flex items-start gap-1.5">
                               <strong className="text-lg">{choice.label}.</strong>
-                              {' '}{choice.content}
+                              <MathText text={choice.content || ''} />
                             </span>
                           </label>
                         );
@@ -268,7 +269,7 @@ const TryoutSessionNew = () => {
                           📖 Lihat Pembahasan
                         </summary>
                         <div className="mt-3 p-3 bg-blue-50 rounded-lg text-gray-700 text-sm">
-                          {question.choices[0].explanation}
+                          <MathText text={question.choices[0].explanation || ''} />
                         </div>
                       </details>
                     )}

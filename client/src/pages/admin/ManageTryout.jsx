@@ -3,6 +3,7 @@ import { tryoutService, subjectService, soalService, adminService } from '../../
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
+import MathText from '../../components/MathText';
 
 const ManageTryout = () => {
   const [packages, setPackages] = useState([]);
@@ -901,7 +902,7 @@ const ManageTryout = () => {
                                 {q.difficulty}
                               </span>
                             </div>
-                            <h4 className="text-[14px] font-semibold text-[#191b24] line-clamp-2" dangerouslySetInnerHTML={{ __html: q.content }} />
+                            <MathText className="text-[14px] font-semibold text-[#191b24] line-clamp-2" text={q.content || ''} />
                             {q.image_url && (
                               <div className="mt-2">
                                 <img
@@ -915,8 +916,8 @@ const ManageTryout = () => {
                             {q.choices && q.choices.length > 0 && (
                               <div className="mt-2 flex flex-wrap gap-2">
                                 {q.choices.map((choice) => (
-                                  <span key={choice.id} className={`text-[11px] px-2 py-1 rounded-md font-medium ${choice.is_correct ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-gray-100 text-gray-600'}`}>
-                                    {choice.label}. {choice.content.substring(0, 30)}{choice.content.length > 30 ? '...' : ''}
+                                  <span key={choice.id} className={`text-[11px] px-2 py-1 rounded-md font-medium flex items-center gap-1 ${choice.is_correct ? 'bg-green-100 text-green-700 border border-green-300' : 'bg-gray-100 text-gray-600'}`}>
+                                    <strong>{choice.label}.</strong> <MathText text={choice.content.substring(0, 30) + (choice.content.length > 30 ? '...' : '')} />
                                   </span>
                                 ))}
                               </div>

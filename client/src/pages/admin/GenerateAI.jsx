@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { subjectService, adminService, soalService } from '../../services/api';
 import toast from 'react-hot-toast';
+import MathText from '../../components/MathText';
 
 const GenerateAI = () => {
   const [subjects, setSubjects] = useState([]);
@@ -324,7 +325,7 @@ const GenerateAI = () => {
                   </span>
 
                   {/* Question Text */}
-                  <h4 className="font-headline-md text-headline-md text-on-surface mb-6" dangerouslySetInnerHTML={{ __html: q.content }} />
+                  <MathText className="font-headline-md text-headline-md text-on-surface mb-6" text={q.content || ''} />
 
                   {/* Choices Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -346,7 +347,7 @@ const GenerateAI = () => {
                             <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>check</span>
                           )}
                         </div>
-                        <span className="text-label-md text-on-surface">{c.content}</span>
+                        <MathText className="text-label-md text-on-surface" text={c.content || ''} />
                       </div>
                     ))}
                   </div>
@@ -354,9 +355,10 @@ const GenerateAI = () => {
                   {/* Explanation */}
                   {q.explanation && (
                     <div className="mt-4 p-4 border border-outline-variant rounded-lg bg-surface-container-low">
-                      <p className="text-label-md text-on-surface-variant italic">
-                        <span className="font-bold not-italic">Penjelasan: </span>{q.explanation}
-                      </p>
+                      <div className="text-label-md text-on-surface-variant italic flex flex-wrap gap-1">
+                        <span className="font-bold not-italic">Penjelasan: </span>
+                        <MathText text={q.explanation} />
+                      </div>
                     </div>
                   )}
                 </div>
