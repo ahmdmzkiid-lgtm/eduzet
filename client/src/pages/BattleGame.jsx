@@ -65,6 +65,17 @@ const BattleGame = () => {
     }
   }, [currentQuestionIndex]);
 
+  // Block copy/select-all keyboard shortcuts on exam page
+  useEffect(() => {
+    const blockCopy = (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 's'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', blockCopy);
+    return () => document.removeEventListener('keydown', blockCopy);
+  }, []);
+
   const fetchQuestions = async () => {
     try {
       if (!questionIds || questionIds.length === 0) {

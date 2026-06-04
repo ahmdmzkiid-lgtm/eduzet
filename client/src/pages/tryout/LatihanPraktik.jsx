@@ -78,6 +78,17 @@ const LatihanPraktik = () => {
     if (subjectId) fetchData();
   }, [subjectId, topicId]);
 
+  // Block copy/select-all keyboard shortcuts on exam page
+  useEffect(() => {
+    const blockCopy = (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 's'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', blockCopy);
+    return () => document.removeEventListener('keydown', blockCopy);
+  }, []);
+
   const handleVerified = async () => {
     try {
       // retry fetch after verified

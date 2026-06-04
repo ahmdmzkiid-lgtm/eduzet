@@ -280,6 +280,17 @@ const TryoutResult = () => {
       )}
 
       <main className="max-w-[1440px] mx-auto px-6 lg:px-10 py-12">
+        {/* Back Button */}
+        <div className="mb-6">
+          <button 
+            onClick={() => navigate('/tryout/packages')} 
+            className="flex items-center gap-2 text-[#0050cb] hover:text-[#003fb2] font-semibold text-[14px] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            <span>Kembali ke Pusat Tryout</span>
+          </button>
+        </div>
+
         {/* Header Section */}
         <section className="mb-20">
           <div className="flex flex-col md:flex-row justify-between items-end gap-6 mb-10">

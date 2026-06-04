@@ -61,10 +61,27 @@ function tokenize(input) {
   return segments;
 }
 
+const preventEvent = (e) => { e.preventDefault(); return false; };
+
 const MathText = ({ text = '', as: As = 'div', className = '' }) => {
   const parts = tokenize(text);
   return (
-    <As className={className} style={{ whiteSpace: 'pre-wrap' }}>
+    <As
+      className={className}
+      style={{
+        whiteSpace: 'pre-wrap',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        MozUserSelect: 'none',
+        msUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+      }}
+      onCopy={preventEvent}
+      onCut={preventEvent}
+      onContextMenu={preventEvent}
+      onDragStart={preventEvent}
+      onSelectStart={preventEvent}
+    >
       {parts.length === 0 ? null : parts.map((p, idx) => {
         if (p.type === 'text') return <React.Fragment key={idx}>{p.text}</React.Fragment>;
         if (p.type === 'inline') {

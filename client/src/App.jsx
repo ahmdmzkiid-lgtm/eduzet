@@ -24,6 +24,7 @@ import InputSoal from './pages/admin/InputSoal';
 import ImportCSV from './pages/admin/ImportCSV';
 // GenerateAI removed
 import UserManagement from './pages/admin/UserManagement';
+import ManageTeam from './pages/admin/ManageTeam';
 import AdminSettings from './pages/admin/AdminSettings';
 import ManageLatihan from './pages/admin/ManageLatihan';
 import LatihanPraktik from './pages/tryout/LatihanPraktik';
@@ -53,6 +54,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
 import Careers from './pages/Careers';
+import TeamPage from './pages/TeamPage';
+import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
@@ -63,14 +66,16 @@ function App() {
       <AuthProvider>
         <NotificationProvider>
         <Router>
+          <ScrollToTop />
           <Routes>
-            {/* Public Routes */}
+          {/* Public Routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/terms-and-conditions" element={<TermsAndConditions />} />
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/careers" element={<Careers />} />
+          <Route path="/team" element={<TeamPage />} />
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -114,6 +119,7 @@ function App() {
               <Route path="input" element={<InputSoal />} />
               <Route path="import" element={<ImportCSV />} />
               <Route path="users" element={<UserManagement />} />
+              <Route path="team" element={<ManageTeam />} />
               <Route path="settings" element={<AdminSettings />} />
               <Route path="latihan" element={<ManageLatihan />} />
               <Route path="tryout" element={<ManageTryout />} />

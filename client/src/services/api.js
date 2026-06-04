@@ -212,4 +212,11 @@ export const uploadService = {
   deleteImage: (publicId) => api.delete('/upload/image', { data: { public_id: publicId } }),
 };
 
+export const teamService = {
+  list: () => api.get('/team'),
+  create: (data) => api.post('/admin/team', data),
+  update: (id, data) => api.patch(`/admin/team/${id}`, data),
+  delete: (id) => api.delete(`/admin/team/${id}`),
+};
+
 export default api;

@@ -147,6 +147,17 @@ const TryoutUMResult = () => {
       )}
 
       <main className="flex-grow">
+        {/* Back Button */}
+        <div className="max-w-[1440px] mx-auto px-4 md:px-10 pt-8 -mb-4">
+          <button 
+            onClick={() => navigate(`/ujian-mandiri/${effectiveUjianId}`)} 
+            className="flex items-center gap-2 text-[#0050cb] hover:text-[#003fb2] font-semibold text-[14px] transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+            <span>Kembali ke {ujianName || 'Ujian'}</span>
+          </button>
+        </div>
+
         {/* Hero Result */}
         <section className="py-12 md:py-20 px-4 md:px-10 max-w-[1440px] mx-auto">
           <div className="relative overflow-hidden bg-gradient-to-br from-[#0050cb] to-[#003da6] rounded-[24px] p-8 md:p-16 text-white flex flex-col items-center text-center shadow-lg">

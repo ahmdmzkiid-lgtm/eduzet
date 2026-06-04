@@ -122,6 +122,9 @@ const ZoomableImage = ({ src, alt, className = '', containerClassName = '', onEr
           className={`${className} transition-all duration-300 group-hover:scale-[1.01] group-hover:brightness-95`}
           onClick={openModal}
           onError={onError}
+          onContextMenu={(e) => e.preventDefault()}
+          onDragStart={(e) => e.preventDefault()}
+          style={{ userSelect: 'none', WebkitUserSelect: 'none', pointerEvents: 'auto' }}
         />
         {/* Overlay Hover Effect */}
         <div 
@@ -217,7 +220,9 @@ const ZoomableImage = ({ src, alt, className = '', containerClassName = '', onEr
               }}
               onMouseDown={handleMouseDown}
               onTouchStart={handleTouchStart}
-              onClick={(e) => e.stopPropagation()} // Prevent close on clicking the image
+              onClick={(e) => e.stopPropagation()}
+              onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
               onDoubleClick={(e) => {
                 e.stopPropagation();
                 if (scale > 1) {

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 const Footer = () => {
   return (
     <footer className="bg-white border-t border-[#c2c6d8]/30 mt-16">
+      {/* Footer Links */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16 lg:gap-24 px-6 lg:px-10 py-16 lg:py-24 max-w-[1440px] mx-auto">
         <div className="space-y-6">
           <div className="text-[24px] font-bold text-[#0050cb]">Eduzet</div>
@@ -21,20 +22,21 @@ const Footer = () => {
               <Link to="/latihan" className="hover:text-[#0050cb] transition-colors">Latihan Soal</Link>
               <Link to="/tryout/packages" className="hover:text-[#0050cb] transition-colors">Tryout</Link>
               <Link to="/pricing" className="hover:text-[#0050cb] transition-colors">Harga</Link>
+              <Link to="/team" className="hover:text-[#0050cb] transition-colors">Tim Eduzet</Link>
             </nav>
           </div>
           <div className="flex flex-col gap-4">
             <h4 className="font-bold text-[#191b24] uppercase tracking-widest text-[12px]">Legal</h4>
             <nav className="flex flex-col gap-3 font-normal text-[#424656] text-[16px]">
-              <Link to="#" className="hover:text-[#0050cb] transition-colors">Privasi</Link>
-              <Link to="#" className="hover:text-[#0050cb] transition-colors">Ketentuan</Link>
+              <Link to="/privacy-policy" className="hover:text-[#0050cb] transition-colors">Privasi</Link>
+              <Link to="/terms-and-conditions" className="hover:text-[#0050cb] transition-colors">Ketentuan</Link>
             </nav>
           </div>
           <div className="flex flex-col gap-4">
             <h4 className="font-bold text-[#191b24] uppercase tracking-widest text-[12px]">Bantuan</h4>
             <nav className="flex flex-col gap-3 font-normal text-[#424656] text-[16px]">
-              <Link to="#" className="hover:text-[#0050cb] transition-colors">Pusat Bantuan</Link>
-              <Link to="#" className="hover:text-[#0050cb] transition-colors">Kontak</Link>
+              <Link to="/contact-us" className="hover:text-[#0050cb] transition-colors">Pusat Bantuan</Link>
+              <Link to="/contact-us" className="hover:text-[#0050cb] transition-colors">Kontak</Link>
             </nav>
           </div>
         </div>

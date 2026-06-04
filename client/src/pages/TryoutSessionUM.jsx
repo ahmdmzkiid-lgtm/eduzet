@@ -189,6 +189,17 @@ const TryoutSessionUM = () => {
     localStorage.setItem(LS_NAV, JSON.stringify({ questionIdx: currentIndex }));
   }, [currentIndex]);
 
+  // Block copy/select-all keyboard shortcuts on exam page
+  useEffect(() => {
+    const blockCopy = (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'a', 'x', 's'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', blockCopy);
+    return () => document.removeEventListener('keydown', blockCopy);
+  }, []);
+
   // ── Submit: Bulk submit to backend, then navigate to result ──
   const handleSubmit = useCallback(async () => {
     if (submitting) return;

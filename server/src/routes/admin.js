@@ -427,4 +427,94 @@ router.get('/activity/stream', ensureAdminFromAny, async (req, res) => {
   });
 });
 
+// ──────────────────────────────────
+// Tim Eduzet CRUD (Admin)
+// ──────────────────────────────────
+
+// GET /api/admin/team - List all team members
+router.get('/team', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM team_members ORDER BY display_order ASC, created_at ASC'
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/admin/team - Create team member
+router.post('/team', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const { name, role, photo_url, bio, instagram_url, linkedin_url } = req.body;
+    if (!name || !role) {
+      return res.status(400).json({ success: false, error: 'Nama dan role wajib diisi.' });
+    }
+    // Get next display_order
+    const maxOrder = await pool.query('SELECT COALESCE(MAX(display_order), 0) + 1 as next_order FROM team_members');
+    const display_order = maxOrder.rows[0].next_order;
+
+    const result = await pool.query(
+      'INSERT INTO team_members (name, role, photo_url, bio, instagram_url, linkedin_url, display_order) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [name, role, photo_url || null, bio || null, instagram_url || null, linkedin_url || null, display_order]
+    );
+    res.status(201).json({ success: true, data: result.rows[0], message: 'Anggota tim berhasil ditambahkan.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// PATCH /api/admin/team/:id - Update team member
+router.patch('/team/:id', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { name, role, photo_url, bio, instagram_url, linkedin_url, display_order } = req.body;
+
+    const fields = [];
+    const values = [];
+    let paramIndex = 1;
+
+    if (name !== undefined) { fields.push(`name = $${paramIndex++}`); values.push(name); }
+    if (role !== undefined) { fields.push(`role = $${paramIndex++}`); values.push(role); }
+    if (photo_url !== undefined) { fields.push(`photo_url = $${paramIndex++}`); values.push(photo_url); }
+    if (bio !== undefined) { fields.push(`bio = $${paramIndex++}`); values.push(bio); }
+    if (instagram_url !== undefined) { fields.push(`instagram_url = $${paramIndex++}`); values.push(instagram_url); }
+    if (linkedin_url !== undefined) { fields.push(`linkedin_url = $${paramIndex++}`); values.push(linkedin_url); }
+    if (display_order !== undefined) { fields.push(`display_order = $${paramIndex++}`); values.push(display_order); }
+    fields.push(`updated_at = NOW()`);
+
+    if (fields.length === 1) {
+      return res.status(400).json({ success: false, error: 'Tidak ada field yang diupdate.' });
+    }
+
+    values.push(id);
+    const result = await pool.query(
+      `UPDATE team_members SET ${fields.join(', ')} WHERE id = $${paramIndex} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Anggota tim tidak ditemukan.' });
+    }
+
+    res.json({ success: true, data: result.rows[0], message: 'Anggota tim berhasil diupdate.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// DELETE /api/admin/team/:id - Delete team member
+router.delete('/team/:id', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query('DELETE FROM team_members WHERE id = $1 RETURNING *', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Anggota tim tidak ditemukan.' });
+    }
+    res.json({ success: true, message: 'Anggota tim berhasil dihapus.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
