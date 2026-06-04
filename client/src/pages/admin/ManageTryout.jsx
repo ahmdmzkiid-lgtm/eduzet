@@ -277,14 +277,12 @@ const ManageTryout = () => {
     try {
       await soalService.shuffleChoices(question.id);
       // Reload questions to get shuffled choices
-      const matchedSubject = subjects.find(s => s.name === managingSubtest.name || s.title === managingSubtest.name);
-      if (matchedSubject) {
-        const res = await soalService.list({ 
-          subject_id: matchedSubject.id,
-          tryout_package_id: selectedPackage?.id
-        });
-        setSubtestQuestions(Array.isArray(res.data?.data) ? res.data.data : []);
-      }
+      const res = await soalService.list({ 
+        subject_name: managingSubtest.name,
+        tryout_package_id: selectedPackage?.id
+      });
+      const questions = res.data?.data || [];
+      setSubtestQuestions(Array.isArray(questions) ? questions : []);
       toast.success('Urutan jawaban sudah diacak');
     } catch {
       toast.error('Gagal mengacak jawaban');
@@ -308,14 +306,12 @@ const ManageTryout = () => {
       setShowEditQuestionModal(false);
       setEditingQuestion(null);
       // Reload questions
-      const matchedSubject = subjects.find(s => s.name === managingSubtest.name || s.title === managingSubtest.name);
-      if (matchedSubject) {
-        const res = await soalService.list({ 
-          subject_id: matchedSubject.id,
-          tryout_package_id: selectedPackage?.id
-        });
-        setSubtestQuestions(Array.isArray(res.data?.data) ? res.data.data : []);
-      }
+      const res = await soalService.list({ 
+        subject_name: managingSubtest.name,
+        tryout_package_id: selectedPackage?.id
+      });
+      const questions = res.data?.data || [];
+      setSubtestQuestions(Array.isArray(questions) ? questions : []);
     } catch {
       toast.error('Gagal menyimpan soal');
     }

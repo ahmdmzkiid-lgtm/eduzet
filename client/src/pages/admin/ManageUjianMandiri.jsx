@@ -305,16 +305,13 @@ export default function ManageUjianMandiri() {
   };
 
   // ========== Kelola Soal Functions ==========
-  const openManageSoal = async (type, ujianId, item) => {
-    setManagingItem({ type, ujianId, item });
-    setShowImportSection(false);
-    setImportFile(null);
-    setImportPreview([]);
+  const fetchQuestions = async (itemInfo = managingItem) => {
+    if (!itemInfo) return;
     setQuestionsLoading(true);
     try {
       const res = await ujianMandiriService.getQuestions({
-        parent_type: type === 'tryout' ? 'tryout_package' : 'latihan_soal',
-        parent_id: item.id,
+        parent_type: itemInfo.type === 'tryout' ? 'tryout_package' : 'latihan_soal',
+        parent_id: itemInfo.item.id,
       });
       setQuestions(res.data.data || []);
     } catch (err) {
@@ -323,6 +320,15 @@ export default function ManageUjianMandiri() {
     } finally {
       setQuestionsLoading(false);
     }
+  };
+
+  const openManageSoal = async (type, ujianId, item) => {
+    const itemInfo = { type, ujianId, item };
+    setManagingItem(itemInfo);
+    setShowImportSection(false);
+    setImportFile(null);
+    setImportPreview([]);
+    await fetchQuestions(itemInfo);
   };
 
   const closeManageSoal = () => {
@@ -361,11 +367,7 @@ export default function ManageUjianMandiri() {
       const res = await ujianMandiriService.importExcel(formData);
       toast.success(`${res.data.imported || 0} soal berhasil diimport`);
       // Refresh questions
-      const qRes = await ujianMandiriService.getQuestions({
-        parent_type: managingItem.type === 'tryout' ? 'tryout_package' : 'latihan_soal',
-        parent_id: managingItem.item.id,
-      });
-      setQuestions(qRes.data.data || []);
+      await fetchQuestions(managingItem);
       setImportFile(null);
       setImportPreview([]);
       setShowImportSection(false);
@@ -415,7 +417,7 @@ export default function ManageUjianMandiri() {
       await ujianMandiriService.shuffleChoices(questionId);
       toast.success('Jawaban berhasil diacak!');
       // Reload questions to get shuffled choices from server
-      fetchQuestions();
+      await fetchQuestions();
     } catch (err) {
       toast.error('Gagal mengacak jawaban');
     }
