@@ -7,6 +7,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 /**
  * TryoutSession - Menggunakan useTryoutFetch Hook
@@ -194,6 +195,15 @@ const TryoutSessionNew = () => {
                       ${isFlagged ? 'border-l-yellow-500 bg-yellow-50' : 'border-l-indigo-500'}
                     `}
                   >
+                    {/* QUESTION IMAGE (BEFORE) */}
+                    {question.image_url && question.image_position === 'before' && (
+                      <ZoomableImage
+                        src={question.image_url}
+                        alt="Question"
+                        className="mb-4 max-w-full rounded-lg max-h-64 object-contain"
+                      />
+                    )}
+
                     {/* QUESTION HEADER */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -214,9 +224,9 @@ const TryoutSessionNew = () => {
                       </button>
                     </div>
 
-                    {/* QUESTION IMAGE */}
-                    {question.image_url && (
-                      <img
+                    {/* QUESTION IMAGE (AFTER) */}
+                    {question.image_url && question.image_position !== 'before' && (
+                      <ZoomableImage
                         src={question.image_url}
                         alt="Question"
                         className="mb-4 max-w-full rounded-lg max-h-64 object-contain"

@@ -271,12 +271,12 @@ router.post('/questions', [verifyToken, verifyAdmin], async (req, res, next) => 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { tryout_package_id, latihan_id, content, image_url, difficulty, choices } = req.body;
+    const { tryout_package_id, latihan_id, content, image_url, image_position, difficulty, choices } = req.body;
 
     const qResult = await client.query(
-      `INSERT INTO um_questions (tryout_package_id, latihan_id, content, image_url, difficulty)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [tryout_package_id || null, latihan_id || null, content, image_url || null, difficulty || 'medium']
+      `INSERT INTO um_questions (tryout_package_id, latihan_id, content, image_url, image_position, difficulty)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [tryout_package_id || null, latihan_id || null, content, image_url || null, image_position || 'after', difficulty || 'medium']
     );
     const question = qResult.rows[0];
 
@@ -316,12 +316,12 @@ router.patch('/questions/:id', [verifyToken, verifyAdmin], async (req, res, next
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { content, image_url, difficulty, choices } = req.body;
+    const { content, image_url, image_position, difficulty, choices } = req.body;
 
     await client.query(
       `UPDATE um_questions SET content = COALESCE($1, content), image_url = $2,
-       difficulty = COALESCE($3, difficulty) WHERE id = $4`,
-      [content, image_url !== undefined ? image_url : null, difficulty, req.params.id]
+       image_position = COALESCE($3, image_position), difficulty = COALESCE($4, difficulty) WHERE id = $5`,
+      [content, image_url !== undefined ? image_url : null, image_position, difficulty, req.params.id]
     );
 
     if (choices && choices.length > 0) {

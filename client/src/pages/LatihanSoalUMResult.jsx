@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ujianMandiriService } from '../services/api';
 import DiscussQuestionModal from '../components/DiscussQuestionModal';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 const LatihanSoalUMResult = () => {
   const navigate = useNavigate();
@@ -321,11 +322,15 @@ const LatihanSoalUMResult = () => {
                     </span>
                   </div>
 
-                  <MathText className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed" text={qr.content || ''} />
-
-                  {qr.image_url && (
+                  {qr.image_url && qr.image_position === 'before' && (
                     <div className="mb-4">
-                      <img src={qr.image_url} alt="Soal" className="max-w-full max-h-64 object-contain rounded-xl border border-[#e0e2f0]" />
+                      <ZoomableImage src={qr.image_url} alt="Soal" className="max-w-full max-h-64 object-contain rounded-xl border border-[#e0e2f0]" />
+                    </div>
+                  )}
+                  <MathText className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed" text={qr.content || ''} />
+                  {qr.image_url && qr.image_position !== 'before' && (
+                    <div className="mb-4">
+                      <ZoomableImage src={qr.image_url} alt="Soal" className="max-w-full max-h-64 object-contain rounded-xl border border-[#e0e2f0]" />
                     </div>
                   )}
 

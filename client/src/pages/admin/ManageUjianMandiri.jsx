@@ -5,6 +5,7 @@ import ImageUpload from '../../components/ImageUpload';
 import { ujianMandiriService, soalService } from '../../services/api';
 import { STATUS_OPTIONS, getStatusConfig } from '../../data/ujianMandiriData';
 import MathText from '../../components/MathText';
+import ZoomableImage from '../../components/ui/ZoomableImage';
 
 const DEFAULT_BANNER = {
   badge: 'AKADEMIK 2026', title: 'Eksplorasi Ujian Mandiri 2026',
@@ -402,6 +403,7 @@ export default function ManageUjianMandiri() {
         content: editingQuestion.content,
         difficulty: editingQuestion.difficulty,
         image_url: editingQuestion.image_url,
+        image_position: editingQuestion.image_position || 'after',
       });
       setQuestions(questions.map(q => q.id === editingQuestion.id ? editingQuestion : q));
       toast.success('Soal berhasil disimpan');
@@ -1294,7 +1296,7 @@ export default function ManageUjianMandiri() {
                         <div className="px-4 pb-4 pt-0 border-t border-[#c2c6d8]/20">
                           {q.image_url && (
                             <div className="mb-3 pt-3">
-                              <img src={q.image_url} alt="Soal" className="max-w-[300px] max-h-[200px] rounded-lg object-contain border border-[#c2c6d8]/30" />
+                              <ZoomableImage src={q.image_url} alt="Soal" className="max-w-[300px] max-h-[200px] rounded-lg object-contain border border-[#c2c6d8]/30" />
                             </div>
                           )}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-3">
@@ -1353,6 +1355,36 @@ export default function ManageUjianMandiri() {
                 folder="ujian-mandiri/soal"
                 aspectRatio="aspect-video"
               />
+
+              {editingQuestion.image_url && (
+                <div>
+                  <label className="block text-[14px] font-bold text-[#191b24] mb-2">Posisi Gambar</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 text-[14px] cursor-pointer text-[#424656]">
+                      <input
+                        type="radio"
+                        name="image_position"
+                        value="after"
+                        checked={(editingQuestion.image_position || 'after') === 'after'}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, image_position: 'after' })}
+                        className="w-4 h-4 text-[#0050cb]"
+                      />
+                      Setelah Teks (Bawah)
+                    </label>
+                    <label className="flex items-center gap-2 text-[14px] cursor-pointer text-[#424656]">
+                      <input
+                        type="radio"
+                        name="image_position"
+                        value="before"
+                        checked={editingQuestion.image_position === 'before'}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, image_position: 'before' })}
+                        className="w-4 h-4 text-[#0050cb]"
+                      />
+                      Sebelum Teks (Atas)
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[14px] font-bold text-[#191b24] mb-2">Tingkat Kesulitan</label>

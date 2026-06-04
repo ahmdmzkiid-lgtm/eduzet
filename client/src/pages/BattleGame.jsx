@@ -4,6 +4,7 @@ import { battleService } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 const BattleGame = () => {
   const navigate = useNavigate();
@@ -374,9 +375,12 @@ const BattleGame = () => {
                     {currentQuestion.difficulty === 'easy' ? 'Mudah' : currentQuestion.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                   </span>
                 </div>
+                {currentQuestion.image_url && currentQuestion.image_position === 'before' && (
+                  <ZoomableImage className="w-full max-h-60 object-contain rounded-xl mb-4 border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+                )}
                 <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion.content || ''} />
-                {currentQuestion.image_url && (
-                  <img className="w-full max-h-60 object-contain rounded-xl mt-4 border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+                {currentQuestion.image_url && currentQuestion.image_position !== 'before' && (
+                  <ZoomableImage className="w-full max-h-60 object-contain rounded-xl mt-4 border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
                 )}
               </div>
 

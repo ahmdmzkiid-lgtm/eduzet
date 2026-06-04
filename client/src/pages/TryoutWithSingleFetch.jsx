@@ -4,6 +4,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import toast from 'react-hot-toast';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 /**
  * CONTOH PENGGUNAAN useTryoutFetch Hook
@@ -195,6 +196,15 @@ const TryoutWithSingleFetch = ({ tryoutPackageId }) => {
                       ${isFlagged ? 'border-l-yellow-500 bg-yellow-50' : 'border-l-indigo-500'}
                     `}
                   >
+                    {/* QUESTION IMAGE (BEFORE) */}
+                    {question.image_url && question.image_position === 'before' && (
+                      <ZoomableImage
+                        src={question.image_url}
+                        alt="Question"
+                        className="mb-4 max-w-full rounded-lg"
+                      />
+                    )}
+
                     {/* QUESTION NUMBER & FLAG */}
                     <div className="flex justify-between items-start mb-4">
                       <div className="text-lg font-bold text-gray-900 mb-2 flex items-start gap-1">
@@ -213,9 +223,9 @@ const TryoutWithSingleFetch = ({ tryoutPackageId }) => {
                       </button>
                     </div>
 
-                    {/* QUESTION IMAGE */}
-                    {question.image_url && (
-                      <img
+                    {/* QUESTION IMAGE (AFTER) */}
+                    {question.image_url && question.image_position !== 'before' && (
+                      <ZoomableImage
                         src={question.image_url}
                         alt="Question"
                         className="mb-4 max-w-full rounded-lg"

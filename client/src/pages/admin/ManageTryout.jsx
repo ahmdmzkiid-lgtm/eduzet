@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
 import MathText from '../../components/MathText';
+import ZoomableImage from '../../components/ui/ZoomableImage';
 
 const ManageTryout = () => {
   const [packages, setPackages] = useState([]);
@@ -300,7 +301,8 @@ const ManageTryout = () => {
       await soalService.update(editingQuestion.id, {
         content: editingQuestion.content,
         difficulty: editingQuestion.difficulty,
-        image_url: editingQuestion.image_url || null
+        image_url: editingQuestion.image_url || null,
+        image_position: editingQuestion.image_position || 'after'
       });
       toast.success('Soal berhasil disimpan');
       setShowEditQuestionModal(false);
@@ -898,10 +900,20 @@ const ManageTryout = () => {
                                 {q.difficulty}
                               </span>
                             </div>
-                            <MathText className="text-[14px] font-semibold text-[#191b24] line-clamp-2" text={q.content || ''} />
-                            {q.image_url && (
+                            {q.image_url && q.image_position === 'before' && (
                               <div className="mt-2">
-                                <img
+                                <ZoomableImage
+                                  src={q.image_url}
+                                  alt="Question"
+                                  className="max-w-[200px] max-h-[100px] rounded-lg object-cover"
+                                  onError={(e) => e.target.style.display = 'none'}
+                                />
+                              </div>
+                            )}
+                            <MathText className="text-[14px] font-semibold text-[#191b24] line-clamp-2" text={q.content || ''} />
+                            {q.image_url && q.image_position !== 'before' && (
+                              <div className="mt-2">
+                                <ZoomableImage
                                   src={q.image_url}
                                   alt="Question"
                                   className="max-w-[200px] max-h-[100px] rounded-lg object-cover"
@@ -1129,15 +1141,43 @@ const ManageTryout = () => {
                 />
               </div>
 
-              <div>
-                <ImageUpload
-                  label="Gambar Soal (opsional)"
-                  value={editingQuestion.image_url || ''}
-                  onChange={(url) => setEditingQuestion({ ...editingQuestion, image_url: url })}
-                  folder="tryout/soal"
-                  aspectRatio="aspect-video"
-                />
-              </div>
+              <ImageUpload
+                label="Gambar Soal (opsional)"
+                value={editingQuestion.image_url || ''}
+                onChange={(url) => setEditingQuestion({ ...editingQuestion, image_url: url })}
+                folder="tryout/soal"
+                aspectRatio="aspect-video"
+              />
+
+              {editingQuestion.image_url && (
+                <div>
+                  <label className="block text-[14px] font-bold text-[#191b24] mb-2">Posisi Gambar</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 text-[14px] cursor-pointer text-[#424656]">
+                      <input
+                        type="radio"
+                        name="image_position"
+                        value="after"
+                        checked={(editingQuestion.image_position || 'after') === 'after'}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, image_position: 'after' })}
+                        className="w-4 h-4 text-[#0050cb]"
+                      />
+                      Setelah Teks (Bawah)
+                    </label>
+                    <label className="flex items-center gap-2 text-[14px] cursor-pointer text-[#424656]">
+                      <input
+                        type="radio"
+                        name="image_position"
+                        value="before"
+                        checked={editingQuestion.image_position === 'before'}
+                        onChange={() => setEditingQuestion({ ...editingQuestion, image_position: 'before' })}
+                        className="w-4 h-4 text-[#0050cb]"
+                      />
+                      Sebelum Teks (Atas)
+                    </label>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[14px] font-bold text-[#191b24] mb-2">Tingkat Kesulitan</label>

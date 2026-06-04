@@ -9,6 +9,7 @@ import Calculator from '../components/tryout/Calculator';
 import SocialFollowModal from '../components/SocialFollowModal';
 import LatihanPreRequirementModal from '../components/LatihanPreRequirementModal';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 const LatihanSoalUM = () => {
   const navigate = useNavigate();
@@ -385,10 +386,15 @@ const LatihanSoalUM = () => {
                   {currentQuestion.difficulty === 'easy' ? 'Mudah' : currentQuestion.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                 </span>
               </div>
+              {currentQuestion.image_url && currentQuestion.image_position === 'before' && (
+                <div className="mb-4">
+                  <ZoomableImage className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+                </div>
+              )}
               <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion.content || ''} />
-              {currentQuestion.image_url && (
+              {currentQuestion.image_url && currentQuestion.image_position !== 'before' && (
                 <div className="mt-4">
-                  <img className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+                  <ZoomableImage className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
                 </div>
               )}
             </div>

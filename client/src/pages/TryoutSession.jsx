@@ -7,6 +7,7 @@ import SubmitConfirmModal from '../components/SubmitConfirmModal';
 import QuestionGrid from '../components/tryout/QuestionGrid';
 import Calculator from '../components/tryout/Calculator';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 const TryoutSession = () => {
   const { sessionId } = useParams();
@@ -435,10 +436,15 @@ const TryoutSession = () => {
             </span>
             <span className="text-[12px] font-medium text-[#727687] bg-[#ecedfa] px-2.5 py-0.5 rounded-md">{currentQuestion?.difficulty || 'medium'}</span>
           </div>
+          {currentQuestion?.image_url && currentQuestion.image_position === 'before' && (
+            <div className="mb-4">
+              <ZoomableImage className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+            </div>
+          )}
           <MathText className="text-[15px] text-[#191b24] leading-relaxed" text={currentQuestion?.content || ''} />
-          {currentQuestion?.image_url && (
+          {currentQuestion?.image_url && currentQuestion.image_position !== 'before' && (
             <div className="mt-4">
-              <img className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
+              <ZoomableImage className="w-full h-auto max-h-72 object-contain rounded-xl border border-[#e0e2f0]" src={currentQuestion.image_url} alt="Soal" />
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import Spinner from '../components/ui/Spinner';
 import Badge from '../components/ui/Badge';
 import toast from 'react-hot-toast';
 import MathText from '../components/MathText';
+import ZoomableImage from '../components/ui/ZoomableImage';
 
 const Bookmark = () => {
   const [bookmarks, setBookmarks] = useState([]);
@@ -97,9 +98,12 @@ const Bookmark = () => {
 
                   {isExpanded && (
                     <div className="bg-gray-50 border-t border-gray-200 p-5">
+                      {q.image_url && q.image_position === 'before' && (
+                        <ZoomableImage src={q.image_url} alt="Question" className="max-h-64 object-contain mb-5 rounded-lg border border-gray-200" />
+                      )}
                       <MathText className="text-gray-800 mb-5" text={q.content || ''} />
-                      {q.image_url && (
-                        <img src={q.image_url} alt="Question" className="max-h-64 object-contain mb-5 rounded-lg border border-gray-200" />
+                      {q.image_url && q.image_position !== 'before' && (
+                        <ZoomableImage src={q.image_url} alt="Question" className="max-h-64 object-contain mb-5 rounded-lg border border-gray-200" />
                       )}
 
                       <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Pilihan Jawaban</h4>

@@ -171,7 +171,7 @@ router.post('/', verifyToken, verifyAdmin, async (req, res, next) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { subject_id, content, difficulty, choices } = req.body;
+    const { subject_id, content, difficulty, choices, image_url, image_position } = req.body;
     
     // Get max display_order for this subject
     const maxOrderRes = await client.query(
@@ -181,8 +181,8 @@ router.post('/', verifyToken, verifyAdmin, async (req, res, next) => {
     const nextDisplayOrder = (maxOrderRes.rows[0]?.max_order || 0) + 1;
     
     const qRes = await client.query(
-      'INSERT INTO questions (subject_id, content, difficulty, display_order) VALUES ($1, $2, $3, $4) RETURNING *',
-      [subject_id, content, difficulty || 'medium', nextDisplayOrder]
+      'INSERT INTO questions (subject_id, content, difficulty, display_order, image_url, image_position) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+      [subject_id, content, difficulty || 'medium', nextDisplayOrder, image_url || null, image_position || 'after']
     );
     const question = qRes.rows[0];
     
@@ -353,7 +353,7 @@ router.patch('/reorder/batch', verifyToken, verifyAdmin, async (req, res, next) 
 router.patch('/:id', verifyToken, verifyAdmin, async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { content, difficulty, image_url } = req.body;
+    const { content, difficulty, image_url, image_position } = req.body;
 
     const updates = [];
     const values = [];
@@ -373,6 +373,11 @@ router.patch('/:id', verifyToken, verifyAdmin, async (req, res, next) => {
       paramCount++;
       updates.push(`image_url = $${paramCount}`);
       values.push(image_url);
+    }
+    if (image_position !== undefined) {
+      paramCount++;
+      updates.push(`image_position = $${paramCount}`);
+      values.push(image_position);
     }
 
     if (updates.length === 0) {

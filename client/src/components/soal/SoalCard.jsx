@@ -1,6 +1,7 @@
 import React from 'react';
 import Badge from '../ui/Badge';
 import MathText from '../MathText';
+import ZoomableImage from '../ui/ZoomableImage';
 
 const SoalCard = ({ question, index, onBookmarkToggle, isBookmarked }) => {
   if (!question) return null;
@@ -36,9 +37,12 @@ const SoalCard = ({ question, index, onBookmarkToggle, isBookmarked }) => {
       </div>
 
       <div className="prose prose-invert max-w-none mb-8">
+        {question.image_url && question.image_position === 'before' && (
+          <ZoomableImage src={question.image_url} alt="Question image" className="mb-4 rounded-lg max-h-64 object-contain" />
+        )}
         <MathText className="text-lg leading-relaxed text-slate-200" text={question.content || ''} />
-        {question.image_url && (
-          <img src={question.image_url} alt="Question image" className="mt-4 rounded-lg max-h-64 object-contain" />
+        {question.image_url && question.image_position !== 'before' && (
+          <ZoomableImage src={question.image_url} alt="Question image" className="mt-4 rounded-lg max-h-64 object-contain" />
         )}
       </div>
     </div>
