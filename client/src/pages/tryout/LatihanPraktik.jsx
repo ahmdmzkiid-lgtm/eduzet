@@ -62,11 +62,12 @@ const LatihanPraktik = () => {
       } catch (err) {
         console.error(err);
         const code = err.response?.data?.code;
-        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+        const isGratis = !user || user.current_plan === 'gratis';
+        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL' && isGratis) {
           setShowPreModal(true);
           setShowSocialModal(true);
           setError('FREE_LIMIT_REQUIRE_SOCIAL');
-        } else if (code === 'FREE_LIMIT_REACHED') {
+        } else if (code === 'FREE_LIMIT_REACHED' && isGratis) {
           setError('FREE_LIMIT_REACHED');
         } else {
           setError(err.response?.data?.error || 'Gagal memuat latihan');

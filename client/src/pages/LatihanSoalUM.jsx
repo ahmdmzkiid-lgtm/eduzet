@@ -58,11 +58,12 @@ const LatihanSoalUM = () => {
       } catch (err) {
         console.error(err);
         const code = err.response?.data?.code;
-        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL') {
+        const isGratis = !user || user.current_plan === 'gratis';
+        if (code === 'FREE_LIMIT_REQUIRE_SOCIAL' && isGratis) {
           setShowPreModal(true);
           setShowSocialModal(true);
           setError('FREE_LIMIT_REQUIRE_SOCIAL');
-        } else if (code === 'FREE_LIMIT_REACHED') {
+        } else if (code === 'FREE_LIMIT_REACHED' && isGratis) {
           setError('FREE_LIMIT_REACHED');
         } else {
           const errMsg = err.response?.data?.error || err.message || 'Gagal memuat latihan soal';
@@ -544,16 +545,20 @@ const LatihanSoalUM = () => {
         total={totalQuestions}
       />
       {showCalculator && <Calculator onClose={() => setShowCalculator(false)} />}
-      <LatihanPreRequirementModal
-        open={showPreModal}
-        onClose={() => setShowPreModal(false)}
-        onProceed={() => setShowSocialModal(true)}
-      />
-      <SocialFollowModal
-        open={showSocialModal}
-        onClose={() => setShowSocialModal(false)}
-        onVerified={handleVerified}
-      />
+      {(!user || user.current_plan === 'gratis') && (
+        <>
+          <LatihanPreRequirementModal
+            open={showPreModal}
+            onClose={() => setShowPreModal(false)}
+            onProceed={() => setShowSocialModal(true)}
+          />
+          <SocialFollowModal
+            open={showSocialModal}
+            onClose={() => setShowSocialModal(false)}
+            onVerified={handleVerified}
+          />
+        </>
+      )}
     </div>
   );
 };
