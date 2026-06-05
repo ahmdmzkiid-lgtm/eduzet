@@ -199,6 +199,8 @@ router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file'
     let nextDisplayOrder = (maxOrderRes.rows[0]?.max_order || -1) + 1;
     let imported = 0;
 
+    // Parse all valid rows first (no DB calls yet)
+    const parsedRows = [];
     for (const row of rows) {
       const soal = resolve(row, ALIASES.soal);
       const opsiA = resolve(row, ALIASES.opsiA);
@@ -212,14 +214,6 @@ router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file'
       if (!soal || !opsiA || !opsiB) continue;
       if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) continue;
 
-      const qRes = await client.query(
-        `INSERT INTO um_questions (tryout_package_id, latihan_id, content, difficulty, display_order)
-         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-        [tryout_package_id || null, latihan_id || null, soal, difficulty || 'medium', nextDisplayOrder]
-      );
-      const qId = qRes.rows[0].id;
-      nextDisplayOrder++;
-
       const options = [
         { label: 'A', content: opsiA },
         { label: 'B', content: opsiB },
@@ -228,14 +222,58 @@ router.post('/questions/import', [verifyToken, verifyAdmin, upload.single('file'
       if (opsiD) options.push({ label: 'D', content: opsiD });
       if (opsiE) options.push({ label: 'E', content: opsiE });
 
-      for (const opt of options) {
+      parsedRows.push({ soal, difficulty: difficulty || 'medium', displayOrder: nextDisplayOrder, kunci, pembahasan, options });
+      nextDisplayOrder++;
+    }
+
+    // Batch insert questions (50 at a time)
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < parsedRows.length; i += BATCH_SIZE) {
+      const batch = parsedRows.slice(i, i + BATCH_SIZE);
+      const values = [];
+      const params = [];
+      batch.forEach((r, idx) => {
+        const offset = idx * 5;
+        values.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+        params.push(tryout_package_id || null, latihan_id || null, r.soal, r.difficulty, r.displayOrder);
+      });
+
+      const qRes = await client.query(
+        `INSERT INTO um_questions (tryout_package_id, latihan_id, content, difficulty, display_order)
+         VALUES ${values.join(', ')} RETURNING id, display_order`,
+        params
+      );
+
+      // Map returned IDs back to parsed rows by display_order
+      const idMap = {};
+      for (const row of qRes.rows) {
+        idMap[row.display_order] = row.id;
+      }
+
+      // Batch insert all answer choices for this batch of questions
+      const choiceValues = [];
+      const choiceParams = [];
+      let choiceIdx = 0;
+      for (const r of batch) {
+        const qId = idMap[r.displayOrder];
+        if (!qId) continue;
+        for (const opt of r.options) {
+          const offset = choiceIdx * 5;
+          choiceValues.push(`($${offset + 1}, $${offset + 2}, $${offset + 3}, $${offset + 4}, $${offset + 5})`);
+          choiceParams.push(qId, opt.label, opt.content, opt.label === r.kunci, opt.label === r.kunci ? r.pembahasan : null);
+          choiceIdx++;
+        }
+      }
+
+      if (choiceValues.length > 0) {
         await client.query(
           `INSERT INTO um_answer_choices (question_id, label, content, is_correct, explanation)
-           VALUES ($1, $2, $3, $4, $5)`,
-          [qId, opt.label, opt.content, opt.label === kunci, opt.label === kunci ? pembahasan : null]
+           VALUES ${choiceValues.join(', ')}`,
+          choiceParams
         );
       }
-      imported++;
+
+      imported += batch.length;
     }
 
     await client.query('COMMIT');

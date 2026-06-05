@@ -45,8 +45,8 @@ function tokenize(input) {
     }
 
     // Normal text until next delimiter
-    let nextIdx = input.indexOf('$$', i);
-    const nextInline = findNextUnescaped(input, '$', i);
+    let nextIdx = input.indexOf('$$', i + 1);
+    const nextInline = findNextUnescaped(input, '$', i + 1);
     if (nextIdx === -1 || (nextInline !== -1 && nextInline < nextIdx)) {
       nextIdx = nextInline;
     }

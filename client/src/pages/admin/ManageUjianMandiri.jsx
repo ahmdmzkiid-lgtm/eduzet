@@ -95,9 +95,14 @@ export default function ManageUjianMandiri() {
   const [importDifficulty, setImportDifficulty] = useState('medium');
   const [importLoading, setImportLoading] = useState(false);
   const [importPreview, setImportPreview] = useState([]);
+  const [importParsing, setImportParsing] = useState(false);
   const importFileRef = useRef(null);
   const [showEditQuestionModal, setShowEditQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  
+  // Pagination for questions list
+  const QUESTIONS_PER_PAGE = 20;
+  const [questionsPage, setQuestionsPage] = useState(0);
 
   // ========== Fetch data from API ==========
   const fetchItems = async () => {
@@ -329,6 +334,7 @@ export default function ManageUjianMandiri() {
     setShowImportSection(false);
     setImportFile(null);
     setImportPreview([]);
+    setQuestionsPage(0);
     await fetchQuestions(itemInfo);
   };
 
@@ -343,15 +349,21 @@ export default function ManageUjianMandiri() {
     const f = e.target.files?.[0];
     if (!f) return;
     setImportFile(f);
+    setImportParsing(true);
+    setImportPreview([]);
     const reader = new FileReader();
     reader.onload = (ev) => {
-      try {
-        const data = new Uint8Array(ev.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
-        setImportPreview(json);
-      } catch { setImportPreview([]); }
+      // Defer heavy XLSX parsing so the UI thread stays responsive
+      setTimeout(() => {
+        try {
+          const data = new Uint8Array(ev.target.result);
+          const wb = XLSX.read(data, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+          setImportPreview(json);
+        } catch { setImportPreview([]); }
+        setImportParsing(false);
+      }, 50);
     };
     reader.readAsArrayBuffer(f);
   };
@@ -1183,10 +1195,20 @@ export default function ManageUjianMandiri() {
                       <input type="file" accept=".xlsx,.xls" className="hidden" ref={importFileRef} onChange={handleImportFileChange} />
                       {importFile ? (
                         <div>
-                          <span className="material-symbols-outlined text-green-600 text-[40px] mb-3">check_circle</span>
-                          <p className="font-bold text-[16px] text-[#191b24]">{importFile.name}</p>
-                          <p className="text-[14px] text-[#727687] mt-1"><strong>{importPreview.length}</strong> soal terdeteksi</p>
-                          <button type="button" onClick={(e) => { e.stopPropagation(); setImportFile(null); setImportPreview([]); }} className="text-[#ba1a1a] text-[13px] font-bold mt-3 hover:underline">Ganti File</button>
+                          {importParsing ? (
+                            <>
+                              <span className="material-symbols-outlined animate-spin text-[#0050cb] text-[40px] mb-3">progress_activity</span>
+                              <p className="font-bold text-[16px] text-[#424656]">Memproses file...</p>
+                              <p className="text-[14px] text-[#727687] mt-1">{importFile.name}</p>
+                            </>
+                          ) : (
+                            <>
+                              <span className="material-symbols-outlined text-green-600 text-[40px] mb-3">check_circle</span>
+                              <p className="font-bold text-[16px] text-[#191b24]">{importFile.name}</p>
+                              <p className="text-[14px] text-[#727687] mt-1"><strong>{importPreview.length}</strong> soal terdeteksi</p>
+                              <button type="button" onClick={(e) => { e.stopPropagation(); setImportFile(null); setImportPreview([]); }} className="text-[#ba1a1a] text-[13px] font-bold mt-3 hover:underline">Ganti File</button>
+                            </>
+                          )}
                         </div>
                       ) : (
                         <div>
@@ -1195,7 +1217,7 @@ export default function ManageUjianMandiri() {
                           <p className="text-[13px] text-[#727687] mt-1">Format .xlsx atau .xls</p>
                         </div>
                       )}
-                    </div>
+                        </div>
                     
                     {/* Config */}
                     <div className="w-full md:w-64 space-y-4">
@@ -1213,7 +1235,7 @@ export default function ManageUjianMandiri() {
                       </div>
                       <button
                         onClick={handleImportUpload}
-                        disabled={!importPreview.length || importLoading}
+                        disabled={!importPreview.length || importLoading || importParsing}
                         className="w-full bg-[#0050cb] text-white py-3 rounded-xl font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-[#003fa4] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {importLoading ? (
@@ -1232,96 +1254,181 @@ export default function ManageUjianMandiri() {
               )}
 
               {/* Questions List */}
-              {questions.length === 0 ? (
+              {questionsLoading ? (
+                <div className="text-center py-16">
+                  <span className="material-symbols-outlined animate-spin text-[40px] text-[#0050cb] mb-4">progress_activity</span>
+                  <p className="text-[#727687] font-medium">Memuat soal...</p>
+                </div>
+              ) : questions.length === 0 ? (
                 <div className="text-center py-16 bg-[#f2f3ff]/30 rounded-2xl border border-dashed border-[#c2c6d8]">
                   <span className="material-symbols-outlined text-[56px] text-[#c2c6d8] mb-4">quiz</span>
                   <p className="text-[#727687] font-medium">Belum ada soal</p>
                   <p className="text-[13px] text-[#727687] mt-1">Import soal dari file Excel untuk memulai</p>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  {questions.map((q, idx) => (
-                    <div key={q.id} className="bg-white border border-[#c2c6d8]/30 rounded-xl overflow-hidden hover:shadow-md transition-all">
-                      <div 
-                        className="p-4 flex items-start gap-3 cursor-pointer"
-                        onClick={() => setExpandedQuestion(expandedQuestion === q.id ? null : q.id)}
-                      >
-                        <span className="w-8 h-8 rounded-lg bg-[#f2f3ff] flex items-center justify-center text-[#0050cb] font-bold text-[13px] shrink-0">
-                          {idx + 1}
+              ) : (() => {
+                const totalPages = Math.ceil(questions.length / QUESTIONS_PER_PAGE);
+                const startIdx = questionsPage * QUESTIONS_PER_PAGE;
+                const pageQuestions = questions.slice(startIdx, startIdx + QUESTIONS_PER_PAGE);
+                return (
+                  <div className="space-y-3">
+                    {/* Pagination Info */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between bg-[#f2f3ff]/50 rounded-xl px-4 py-3">
+                        <span className="text-[13px] text-[#424656]">
+                          Menampilkan <strong>{startIdx + 1}-{Math.min(startIdx + QUESTIONS_PER_PAGE, questions.length)}</strong> dari <strong>{questions.length}</strong> soal
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <MathText className="text-[14px] text-[#191b24] font-medium line-clamp-2" text={q.content || ''} />
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
-                              q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                              q.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
-                              'bg-[#f2f3ff] text-[#0050cb]'
-                            }`}>
-                              {q.difficulty === 'easy' ? 'Mudah' : q.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
-                            </span>
-                            <span className="text-[10px] text-[#727687]">{q.choices?.length || 0} opsi</span>
-                            {q.image_url && <span className="text-[10px] text-[#727687] bg-[#f2f3ff] px-2 py-0.5 rounded">📷 Gambar</span>}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1">
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleEditQuestion(q); }}
-                            className="p-1.5 text-[#727687] hover:text-[#0050cb] hover:bg-[#dae1ff]/30 rounded-lg transition-colors"
-                            title="Edit"
+                            onClick={() => setQuestionsPage(0)}
+                            disabled={questionsPage === 0}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#424656] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            title="Halaman pertama"
                           >
-                            <span className="material-symbols-outlined text-[18px]">edit</span>
+                            <span className="material-symbols-outlined text-[16px]">first_page</span>
                           </button>
                           <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleShuffleChoices(q.id); }}
-                            className="p-1.5 text-[#727687] hover:text-[#0050cb] hover:bg-[#dae1ff]/30 rounded-lg transition-colors"
-                            title="Acak Jawaban"
+                            onClick={() => setQuestionsPage(p => Math.max(0, p - 1))}
+                            disabled={questionsPage === 0}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#424656] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                           >
-                            <span className="material-symbols-outlined text-[18px]">shuffle</span>
+                            <span className="material-symbols-outlined text-[16px]">chevron_left</span>
+                          </button>
+                          <span className="px-3 text-[13px] font-bold text-[#0050cb]">{questionsPage + 1} / {totalPages}</span>
+                          <button
+                            onClick={() => setQuestionsPage(p => Math.min(totalPages - 1, p + 1))}
+                            disabled={questionsPage >= totalPages - 1}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#424656] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-[16px]">chevron_right</span>
                           </button>
                           <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); handleDeleteQuestion(q.id); }}
-                            className="p-1.5 text-[#727687] hover:text-[#ba1a1a] hover:bg-[#ffdad6]/30 rounded-lg transition-colors"
-                            title="Hapus"
+                            onClick={() => setQuestionsPage(totalPages - 1)}
+                            disabled={questionsPage >= totalPages - 1}
+                            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#424656] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                            title="Halaman terakhir"
                           >
-                            <span className="material-symbols-outlined text-[18px]">delete</span>
+                            <span className="material-symbols-outlined text-[16px]">last_page</span>
                           </button>
-                          <span className="material-symbols-outlined text-[18px] text-[#727687] transition-transform ml-1" style={{ transform: expandedQuestion === q.id ? 'rotate(180deg)' : 'none' }}>
-                            expand_more
-                          </span>
                         </div>
                       </div>
-                      {expandedQuestion === q.id && (
-                        <div className="px-4 pb-4 pt-0 border-t border-[#c2c6d8]/20">
-                          {q.image_url && (
-                            <div className="mb-3 pt-3">
-                              <ZoomableImage src={q.image_url} alt="Soal" className="max-w-[300px] max-h-[200px] rounded-lg object-contain border border-[#c2c6d8]/30" />
+                    )}
+
+                    {pageQuestions.map((q, idx) => {
+                      const globalIdx = startIdx + idx;
+                      const isExpanded = expandedQuestion === q.id;
+                      // Truncate plain text for collapsed view to avoid heavy KaTeX rendering
+                      const previewText = !isExpanded && q.content && q.content.length > 150
+                        ? q.content.substring(0, 150) + '...'
+                        : q.content;
+                      return (
+                        <div key={q.id} className="bg-white border border-[#c2c6d8]/30 rounded-xl overflow-hidden hover:shadow-md transition-all">
+                          <div 
+                            className="p-4 flex items-start gap-3 cursor-pointer"
+                            onClick={() => setExpandedQuestion(isExpanded ? null : q.id)}
+                          >
+                            <span className="w-8 h-8 rounded-lg bg-[#f2f3ff] flex items-center justify-center text-[#0050cb] font-bold text-[13px] shrink-0">
+                              {globalIdx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              {isExpanded ? (
+                                <MathText className="text-[14px] text-[#191b24] font-medium" text={q.content || ''} />
+                              ) : (
+                                <p className="text-[14px] text-[#191b24] font-medium line-clamp-2">{previewText || ''}</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded ${
+                                  q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                                  q.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
+                                  'bg-[#f2f3ff] text-[#0050cb]'
+                                }`}>
+                                  {q.difficulty === 'easy' ? 'Mudah' : q.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
+                                </span>
+                                <span className="text-[10px] text-[#727687]">{q.choices?.length || 0} opsi</span>
+                                {q.image_url && <span className="text-[10px] text-[#727687] bg-[#f2f3ff] px-2 py-0.5 rounded">📷 Gambar</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleEditQuestion(q); }}
+                                className="p-1.5 text-[#727687] hover:text-[#0050cb] hover:bg-[#dae1ff]/30 rounded-lg transition-colors"
+                                title="Edit"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">edit</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleShuffleChoices(q.id); }}
+                                className="p-1.5 text-[#727687] hover:text-[#0050cb] hover:bg-[#dae1ff]/30 rounded-lg transition-colors"
+                                title="Acak Jawaban"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">shuffle</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); handleDeleteQuestion(q.id); }}
+                                className="p-1.5 text-[#727687] hover:text-[#ba1a1a] hover:bg-[#ffdad6]/30 rounded-lg transition-colors"
+                                title="Hapus"
+                              >
+                                <span className="material-symbols-outlined text-[18px]">delete</span>
+                              </button>
+                              <span className="material-symbols-outlined text-[18px] text-[#727687] transition-transform ml-1" style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
+                                expand_more
+                              </span>
+                            </div>
+                          </div>
+                          {isExpanded && (
+                            <div className="px-4 pb-4 pt-0 border-t border-[#c2c6d8]/20">
+                              {q.image_url && (
+                                <div className="mb-3 pt-3">
+                                  <ZoomableImage src={q.image_url} alt="Soal" className="max-w-[300px] max-h-[200px] rounded-lg object-contain border border-[#c2c6d8]/30" />
+                                </div>
+                              )}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-3">
+                                {q.choices?.map(c => (
+                                  <div key={c.id} className={`p-3 rounded-lg border text-[13px] flex items-start gap-2 ${
+                                    c.is_correct ? 'border-green-300 bg-green-50' : 'border-[#c2c6d8]/30 bg-[#f6f3f4]'
+                                  }`}>
+                                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
+                                      c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
+                                    }`}>{c.label}</span>
+                                    <div className="flex-1 min-w-0">
+                                      <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
+                                      {c.is_correct && c.explanation && (
+                                        <MathText className="text-[11px] text-green-700 mt-1 italic block" text={c.explanation} />
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pt-3">
-                            {q.choices?.map(c => (
-                              <div key={c.id} className={`p-3 rounded-lg border text-[13px] flex items-start gap-2 ${
-                                c.is_correct ? 'border-green-300 bg-green-50' : 'border-[#c2c6d8]/30 bg-[#f6f3f4]'
-                              }`}>
-                                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                                  c.is_correct ? 'bg-green-500 text-white' : 'bg-[#c2c6d8]/30 text-[#424656]'
-                                }`}>{c.label}</span>
-                                <div className="flex-1 min-w-0">
-                                  <MathText className={c.is_correct ? 'text-green-800 font-medium' : 'text-[#191b24]'} text={c.content || ''} />
-                                  {c.is_correct && c.explanation && (
-                                    <MathText className="text-[11px] text-green-700 mt-1 italic block" text={c.explanation} />
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
                         </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                      );
+                    })}
+
+                    {/* Bottom Pagination */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-center gap-1 pt-2">
+                        <button
+                          onClick={() => setQuestionsPage(p => Math.max(0, p - 1))}
+                          disabled={questionsPage === 0}
+                          className="px-4 py-2 rounded-lg text-[13px] font-bold text-[#0050cb] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          ← Sebelumnya
+                        </button>
+                        <span className="px-4 text-[13px] text-[#424656]">{questionsPage + 1} / {totalPages}</span>
+                        <button
+                          onClick={() => setQuestionsPage(p => Math.min(totalPages - 1, p + 1))}
+                          disabled={questionsPage >= totalPages - 1}
+                          className="px-4 py-2 rounded-lg text-[13px] font-bold text-[#0050cb] hover:bg-[#dae1ff] disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                        >
+                          Selanjutnya →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
