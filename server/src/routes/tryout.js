@@ -1475,4 +1475,70 @@ router.get('/leaderboard/:packageId', verifyToken, async (req, res, next) => {
   }
 });
 
+// Leaderboard for UTBK Latihan (by subject and optionally topic)
+router.get('/leaderboard/latihan/:subjectId', verifyToken, async (req, res, next) => {
+  const { subjectId } = req.params;
+  const { topic_id } = req.query;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+
+  try {
+    let query = `
+      SELECT DISTINCT ON (ls.user_id)
+        ls.user_id,
+        u.name,
+        ls.irt_score,
+        ls.submitted_at
+      FROM latihan_sessions ls
+      JOIN users u ON u.id = ls.user_id
+      WHERE ls.subject_id = $1
+        AND ls.submitted_at IS NOT NULL
+        AND ls.irt_score IS NOT NULL
+    `;
+    const params = [subjectId];
+
+    if (topic_id) {
+      query += ` AND ls.topic_id = $2`;
+      params.push(topic_id);
+    }
+
+    query += ` ORDER BY ls.user_id, ls.submitted_at DESC`;
+
+    const leaderboardRes = await pool.query(query, params);
+
+    // Sort by irt_score descending and assign ranks
+    const sorted = leaderboardRes.rows
+      .sort((a, b) => (b.irt_score || 0) - (a.irt_score || 0))
+      .slice(0, limit)
+      .map((row, idx) => ({
+        rank: idx + 1,
+        user_id: row.user_id,
+        name: row.name,
+        score: Math.round(row.irt_score || 0),
+        submitted_at: row.submitted_at,
+      }));
+
+    // Find current user's rank
+    const allSorted = leaderboardRes.rows
+      .sort((a, b) => (b.irt_score || 0) - (a.irt_score || 0));
+    const userIdx = allSorted.findIndex(r => r.user_id === req.user.id);
+    const userRank = userIdx >= 0 ? {
+      rank: userIdx + 1,
+      score: Math.round(allSorted[userIdx].irt_score || 0),
+      total_participants: allSorted.length,
+    } : null;
+
+    res.json({
+      success: true,
+      data: {
+        leaderboard: sorted,
+        user_rank: userRank,
+        total_participants: allSorted.length,
+      }
+    });
+  } catch (error) {
+    console.error('Latihan Leaderboard error:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

@@ -5,6 +5,7 @@ import { ujianMandiriService } from '../services/api';
 import DiscussQuestionModal from '../components/DiscussQuestionModal';
 import MathText from '../components/MathText';
 import ZoomableImage from '../components/ui/ZoomableImage';
+import NationalLeaderboardCard from '../components/NationalLeaderboardCard';
 
 const TryoutUMResult = () => {
   const navigate = useNavigate();
@@ -17,6 +18,25 @@ const TryoutUMResult = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [resultData, setResultData] = useState(null);
+
+  // Leaderboard State
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
+  const {
+    tryoutName = 'Tryout',
+    ujianName = '',
+    ujianId: resultUjianId,
+    tryoutId: resultTryoutId,
+    totalScore = 0,
+    scoreBreakdown = {},
+    questions = [],
+    duration = 60,
+    timeSpent = 0
+  } = resultData || {};
+
+  const effectiveUjianId = ujianId || resultUjianId;
+  const effectiveTryoutId = tryoutId || resultTryoutId;
 
   // Fetch results from backend using sessionId
   useEffect(() => {
@@ -37,6 +57,21 @@ const TryoutUMResult = () => {
     };
     fetchResult();
   }, [sessionId]);
+
+  // Fetch leaderboard when tryoutId is available
+  useEffect(() => {
+    if (effectiveTryoutId) {
+      setLeaderboardLoading(true);
+      ujianMandiriService.getTryoutLeaderboard(effectiveTryoutId, 10)
+        .then((res) => {
+          if (res.data?.success) {
+            setLeaderboard(res.data.data);
+          }
+        })
+        .catch((err) => console.error('Error fetching UM tryout leaderboard:', err))
+        .finally(() => setLeaderboardLoading(false));
+    }
+  }, [effectiveTryoutId]);
 
   const openDiscussion = (question) => {
     setSelectedQuestion(question);
@@ -67,20 +102,7 @@ const TryoutUMResult = () => {
     );
   }
 
-  const {
-    tryoutName = 'Tryout',
-    ujianName = '',
-    ujianId: resultUjianId,
-    tryoutId: resultTryoutId,
-    totalScore = 0,
-    scoreBreakdown = {},
-    questions = [],
-    duration = 60,
-    timeSpent = 0
-  } = resultData;
 
-  const effectiveUjianId = ujianId || resultUjianId;
-  const effectiveTryoutId = tryoutId || resultTryoutId;
 
   const totalQuestions = questions.length;
   const correctCount = scoreBreakdown.benar || questions.filter(q => q.isCorrect).length;
@@ -225,9 +247,11 @@ const TryoutUMResult = () => {
           </div>
         </section>
 
-        {/* Pembahasan */}
-        <section className="pb-20 px-4 md:px-10 max-w-[1440px] mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+        {/* Main Content Grid */}
+        <div className="max-w-[1440px] mx-auto px-4 md:px-10 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Pembahasan */}
+          <section className="lg:col-span-8 order-2 lg:order-1">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
             <div>
               <h2 className="text-[22px] font-bold text-[#191b24]">Pembahasan Soal</h2>
               <p className="text-[13px] text-[#424656]">Review setiap soal dan pahami penjelasan jawaban yang benar.</p>
@@ -333,12 +357,28 @@ const TryoutUMResult = () => {
             ))}
           </div>
 
-          {selectedQuestion && (
-            <DiscussQuestionModal isOpen={isDiscussOpen} onClose={() => setIsDiscussOpen(false)} question={selectedQuestion} />
-          )}
+            {selectedQuestion && (
+              <DiscussQuestionModal isOpen={isDiscussOpen} onClose={() => setIsDiscussOpen(false)} question={selectedQuestion} />
+            )}
+          </section>
 
+          {/* Right Column: Leaderboard */}
+          <aside className="lg:col-span-4 lg:self-start lg:sticky lg:top-24 order-1 lg:order-2">
+            <NationalLeaderboardCard
+              leaderboard={leaderboard}
+              loading={leaderboardLoading}
+              currentUserId={user?.id}
+              typeText="tryout ini"
+              type="um-tryout"
+              id={effectiveTryoutId}
+            />
+          </aside>
+        </div>
+
+        {/* Bottom Section: CTA */}
+        <section className="pb-20 px-4 md:px-10 max-w-[1440px] mx-auto">
           {/* Bottom CTA */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 bg-[#f2f3ff] p-8 rounded-[20px] flex flex-col justify-between">
               <div>
                 <h4 className="text-[24px] font-bold text-[#191b24] mb-2">Lanjutkan Belajar</h4>

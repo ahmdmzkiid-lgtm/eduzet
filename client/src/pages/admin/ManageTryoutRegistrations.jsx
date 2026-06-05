@@ -14,6 +14,7 @@ const ManageTryoutRegistrations = () => {
   const [rejectingItem, setRejectingItem] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [submittingAction, setSubmittingAction] = useState(false);
+  const [deletingItem, setDeletingItem] = useState(null);
 
   const fetchRegistrations = async () => {
     setLoading(true);
@@ -68,6 +69,22 @@ const ManageTryoutRegistrations = () => {
       fetchRegistrations();
     } catch (err) {
       // Handled by axios interceptor
+    } finally {
+      setSubmittingAction(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingItem) return;
+    setSubmittingAction(true);
+    try {
+      await adminService.deleteTryoutRegistration(deletingItem.id);
+      toast.success('Pendaftaran berhasil dihapus');
+      setDeletingItem(null);
+      fetchRegistrations();
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Gagal menghapus pendaftaran';
+      toast.error(errorMsg);
     } finally {
       setSubmittingAction(false);
     }
@@ -277,7 +294,14 @@ const ManageTryoutRegistrations = () => {
                               </button>
                             </>
                           ) : (
-                            <span className="text-xs font-semibold text-[#727687]">Selesai ditinjau</span>
+                            <button
+                              onClick={() => setDeletingItem(reg)}
+                              disabled={submittingAction}
+                              className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-all border border-red-200"
+                              title="Hapus"
+                            >
+                              <span className="material-symbols-outlined text-[20px] font-bold">delete</span>
+                            </button>
                           )}
                         </div>
                       </td>
@@ -405,6 +429,45 @@ const ManageTryoutRegistrations = () => {
                 disabled={submittingAction || !rejectionReason.trim()}
               >
                 {submittingAction ? 'Memproses...' : 'Tolak Pendaftaran'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deletingItem && (
+        <div 
+          className="fixed inset-0 z-[200] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setDeletingItem(null)}
+        >
+          <div 
+            className="w-full max-w-sm bg-white rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-[32px] text-red-600">delete_forever</span>
+              </div>
+              <h3 className="text-lg font-bold text-[#191b24] mb-2">Hapus Pendaftaran?</h3>
+              <p className="text-sm text-[#727687]">
+                Pendaftaran dari <strong>{deletingItem.user_name}</strong> akan dihapus permanen. Tindakan ini tidak bisa dibatalkan.
+              </p>
+            </div>
+            <div className="px-6 py-4 bg-gray-50 flex justify-end gap-3 border-t border-[#c2c6d8]/10">
+              <button
+                onClick={() => setDeletingItem(null)}
+                className="px-4 py-2 text-sm font-semibold hover:bg-gray-150 rounded-lg text-gray-600 transition-all"
+                disabled={submittingAction}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold shadow-md shadow-red-600/10 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                disabled={submittingAction}
+              >
+                {submittingAction ? 'Menghapus...' : 'Hapus'}
               </button>
             </div>
           </div>

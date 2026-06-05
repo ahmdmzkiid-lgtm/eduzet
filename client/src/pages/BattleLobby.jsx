@@ -92,7 +92,8 @@ const BattleLobby = () => {
         });
       }
     } catch (err) {
-      toast.error('Gagal membuat pertandingan');
+      const errorMsg = err.response?.data?.error || 'Gagal membuat pertandingan';
+      toast.error(errorMsg);
       console.error(err);
     } finally {
       setCreatingMatch(false);
@@ -109,23 +110,28 @@ const BattleLobby = () => {
       const res = await battleService.getRandomMatch(selectedSubject.id);
       if (res.data.success && res.data.data) {
         const matchId = res.data.data.id;
-        await battleService.joinMatch({ match_id: matchId });
-        toast.success('Bergabung ke pertandingan!');
-        navigate(`/battle/game/${matchId}`, {
-          state: {
-            matchId,
-            subjectId: selectedSubject.id,
-            subjectName: res.data.data.subject_name,
-            questionCount: res.data.data.question_count,
-            timePerQuestion: res.data.data.time_per_question,
-            questionIds: res.data.data.question_ids,
-          }
-        });
+        const joinRes = await battleService.joinMatch({ match_id: matchId });
+        if (joinRes.data.success) {
+          toast.success('Bergabung ke pertandingan!');
+          navigate(`/battle/game/${matchId}`, {
+            state: {
+              matchId,
+              subjectId: selectedSubject.id,
+              subjectName: res.data.data.subject_name,
+              questionCount: res.data.data.question_count,
+              timePerQuestion: res.data.data.time_per_question,
+              questionIds: res.data.data.question_ids,
+            }
+          });
+        }
       } else {
+        // No waiting match found, create a new one
+        toast('Tidak ada lawan yang menunggu, membuat pertandingan baru...', { icon: '🔍' });
         await handleCreateMatch();
       }
     } catch (err) {
-      toast.error('Gagal mencari pertandingan');
+      const errorMsg = err.response?.data?.error || 'Gagal mencari pertandingan';
+      toast.error(errorMsg);
       console.error(err);
     } finally {
       setSearchingMatch(false);

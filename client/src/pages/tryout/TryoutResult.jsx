@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { tryoutService } from '../../services/api';
 import DiscussQuestionModal from '../../components/DiscussQuestionModal';
 import MathText from '../../components/MathText';
+import NationalLeaderboardCard from '../../components/NationalLeaderboardCard';
 
 const TryoutResult = () => {
   const { sessionId } = useParams();
@@ -24,6 +25,7 @@ const TryoutResult = () => {
   // Leaderboard State
   const [leaderboard, setLeaderboard] = useState(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const pkgId = result?.packageId || location.state?.packageId;
 
   const openDiscussion = (question) => {
     setSelectedQuestion(question);
@@ -401,78 +403,15 @@ const TryoutResult = () => {
           </div>
 
           {/* Peringkat Tryout Nasional */}
-          <div className="md:col-span-4 bg-white rounded-xl p-8 shadow-sm border border-[#c2c6d8]/20">
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-[14px] font-medium text-[#424656] uppercase tracking-widest">Peringkat Nasional</p>
-              <span className="material-symbols-outlined text-[#0050cb] text-[20px]">leaderboard</span>
-            </div>
-
-            {/* User's own rank */}
-            {leaderboard?.user_rank && (
-              <div className="bg-gradient-to-r from-[#0050cb] to-[#003da6] text-white rounded-xl p-4 mb-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wider opacity-80 mb-1">Peringkatmu</p>
-                    <p className="text-[28px] font-bold leading-tight">#{leaderboard.user_rank.rank}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] uppercase tracking-wider opacity-80 mb-1">Dari</p>
-                    <p className="text-[20px] font-bold">{leaderboard.user_rank.total_participants} peserta</p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {leaderboardLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="w-6 h-6 border-2 border-[#0050cb] border-t-transparent rounded-full animate-spin"></div>
-                <span className="ml-3 text-[13px] text-[#727687]">Memuat peringkat...</span>
-              </div>
-            ) : leaderboard?.leaderboard?.length > 0 ? (
-              <div className="space-y-3">
-                {leaderboard.leaderboard.slice(0, 10).map((entry) => {
-                  const isCurrentUser = entry.user_id === user?.id;
-                  const medalColors = {
-                    1: 'bg-[#FFD700] text-[#7A6200]',
-                    2: 'bg-[#C0C0C0] text-[#555]',
-                    3: 'bg-[#CD7F32] text-white',
-                  };
-                  return (
-                    <div
-                      key={entry.rank}
-                      className={`flex items-center gap-3 p-3 rounded-lg transition-all ${
-                        isCurrentUser
-                          ? 'bg-[#e8eeff] border border-[#0050cb]/30'
-                          : 'hover:bg-[#f8f9ff]'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-                        medalColors[entry.rank] || 'bg-[#ecedfa] text-[#424656]'
-                      }`}>
-                        {entry.rank}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className={`text-[13px] font-medium truncate ${isCurrentUser ? 'text-[#0050cb] font-bold' : 'text-[#191b24]'}`}>
-                          {isCurrentUser ? `${entry.name} (Kamu)` : entry.name}
-                        </p>
-                      </div>
-                      <span className="text-[14px] font-bold text-[#191b24] shrink-0">{entry.score}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <span className="material-symbols-outlined text-[40px] text-[#c2c6d8] mb-2">group_off</span>
-                <p className="text-[13px] text-[#727687]">Belum ada data peringkat</p>
-              </div>
-            )}
-
-            {leaderboard && leaderboard.total_participants > 0 && (
-              <p className="text-center text-[11px] text-[#727687] mt-4">
-                Total {leaderboard.total_participants} peserta pada tryout ini
-              </p>
-            )}
+          <div className="md:col-span-4">
+            <NationalLeaderboardCard
+              leaderboard={leaderboard}
+              loading={leaderboardLoading}
+              currentUserId={user?.id}
+              typeText="tryout ini"
+              type="utbk-tryout"
+              id={pkgId}
+            />
           </div>
         </div>
 

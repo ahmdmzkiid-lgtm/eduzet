@@ -50,6 +50,7 @@ import TryoutSessionUM from './pages/TryoutSessionUM';
 import TryoutUMResult from './pages/TryoutUMResult';
 import AdminActivity from './pages/admin/AdminActivity';
 import AdminNotification from './pages/admin/AdminNotification';
+import LeaderboardPage from './pages/LeaderboardPage';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
@@ -106,6 +107,7 @@ function App() {
             <Route path="/ujian-mandiri/:ujianId/latihan/:latihanId/hasil/:sessionId" element={<LatihanSoalUMResult />} />
             <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId" element={<TryoutSessionUM />} />
             <Route path="/ujian-mandiri/:ujianId/tryout/:tryoutId/hasil/:sessionId" element={<TryoutUMResult />} />
+            <Route path="/leaderboard/:type/:id" element={<LeaderboardPage />} />
           </Route>
 
           {/* Student routes that need PageWrapper (no own navbar) */}

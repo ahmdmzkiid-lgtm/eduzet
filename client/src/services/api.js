@@ -69,6 +69,7 @@ export const tryoutService = {
   getResult: (sessionId) => api.get(`/tryout/result/${sessionId}`),
   getCombinedResult: (sessionIds, packageId) => api.post('/tryout/result/combined', { session_ids: sessionIds, package_id: packageId }),
   getLeaderboard: (packageId, limit) => api.get(`/tryout/leaderboard/${packageId}`, { params: { limit } }),
+  getLatihanLeaderboard: (subjectId, topicId, limit) => api.get(`/tryout/leaderboard/latihan/${subjectId}`, { params: { topic_id: topicId, limit } }),
   registerForTryout: (data) => api.post('/tryout/register', data),
   getRegistrationStatus: (packageType, packageId) => api.get(`/tryout/registration-status/${packageType}/${packageId}`),
   getMyTryoutUsage: () => api.get('/tryout/my-tryout-usage'),
@@ -88,6 +89,7 @@ export const adminService = {
   updateUserRole: (id, role) => api.patch(`/admin/users/${id}/role`, { role }),
   getTryoutRegistrations: (params) => api.get('/admin/tryout-registrations', { params }),
   updateTryoutRegistration: (id, data) => api.patch(`/admin/tryout-registrations/${id}`, data),
+  deleteTryoutRegistration: (id) => api.delete(`/admin/tryout-registrations/${id}`),
   getActivity: (params) => api.get('/admin/activity', { params }),
   streamActivity: (token) => {
     const url = new URL((import.meta.env.VITE_API_URL || 'http://localhost:3001/api') + '/admin/activity/stream');
@@ -133,7 +135,9 @@ export const socialService = {
   submitVerification: (data) => api.post('/social/verify', data),
   getStatus: () => api.get('/social/status'),
   listPending: () => api.get('/social/admin/requests'),
+  listAll: (status) => api.get('/social/admin/requests/all', { params: status ? { status } : {} }),
   reviewRequest: (id, payload) => api.patch(`/social/admin/requests/${id}`, payload),
+  deleteRequest: (id) => api.delete(`/social/admin/requests/${id}`),
 };
 
 export const chatService = {
@@ -198,6 +202,8 @@ export const ujianMandiriService = {
   submitTryoutBulk: (payload) => api.post('/ujian-mandiri/tryout/submit-bulk', payload),
   getTryoutResult: (sessionId) => api.get(`/ujian-mandiri/tryout/result/${sessionId}`),
   getLatihanResult: (sessionId) => api.get(`/ujian-mandiri/latihan/result/${sessionId}`),
+  getTryoutLeaderboard: (packageId, limit) => api.get(`/ujian-mandiri/tryout/leaderboard/${packageId}`, { params: { limit } }),
+  getLatihanLeaderboard: (latihanId, limit) => api.get(`/ujian-mandiri/latihan/leaderboard/${latihanId}`, { params: { limit } }),
 };
 
 export const uploadService = {

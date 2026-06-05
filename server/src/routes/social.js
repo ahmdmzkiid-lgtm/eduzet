@@ -95,4 +95,50 @@ router.patch('/admin/requests/:id', [verifyToken, verifyAdmin], async (req, res,
   }
 });
 
+// Admin: list all social verification requests (with optional status filter)
+router.get('/admin/requests/all', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { status } = req.query;
+    let query = `SELECT r.*, u.name AS user_name, u.email AS user_email
+       FROM user_social_verifications r
+       JOIN users u ON u.id = r.user_id
+       WHERE r.context = 'latihan'`;
+    const params = [];
+
+    if (status) {
+      params.push(status);
+      query += ` AND r.status = $${params.length}`;
+    }
+
+    query += ` ORDER BY r.created_at DESC`;
+
+    const result = await pool.query(query, params);
+    res.json({ success: true, data: result.rows });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin: delete approved/rejected social verification
+router.delete('/admin/requests/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const check = await pool.query('SELECT id, status FROM user_social_verifications WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Verifikasi tidak ditemukan.' });
+    }
+
+    if (check.rows[0].status === 'pending') {
+      return res.status(400).json({ success: false, error: 'Tidak bisa menghapus verifikasi yang masih pending. Setujui atau tolak terlebih dahulu.' });
+    }
+
+    await pool.query('DELETE FROM user_social_verifications WHERE id = $1', [id]);
+
+    res.json({ success: true, message: 'Verifikasi berhasil dihapus.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

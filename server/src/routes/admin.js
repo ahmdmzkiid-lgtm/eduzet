@@ -361,6 +361,28 @@ router.patch('/tryout-registrations/:id', verifyToken, verifyAdmin, async (req, 
   }
 });
 
+// DELETE /api/admin/tryout-registrations/:id - Delete approved/rejected registration
+router.delete('/tryout-registrations/:id', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const check = await pool.query('SELECT id, status FROM tryout_registrations WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Pendaftaran tidak ditemukan.' });
+    }
+
+    if (check.rows[0].status === 'pending') {
+      return res.status(400).json({ success: false, error: 'Tidak bisa menghapus pendaftaran yang masih pending. Setujui atau tolak terlebih dahulu.' });
+    }
+
+    await pool.query('DELETE FROM tryout_registrations WHERE id = $1', [id]);
+
+    res.json({ success: true, message: 'Pendaftaran berhasil dihapus.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/admin/activity - preload latest activities
 router.get('/activity', verifyToken, verifyAdmin, async (req, res, next) => {
   try {

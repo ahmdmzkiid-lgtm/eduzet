@@ -1114,4 +1114,116 @@ router.get('/tryout/result/:sessionId', verifyToken, async (req, res, next) => {
   }
 });
 
+// Leaderboard for Ujian Mandiri Tryout Package
+router.get('/tryout/leaderboard/:packageId', verifyToken, async (req, res, next) => {
+  const { packageId } = req.params;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+
+  try {
+    const leaderboardRes = await pool.query(`
+      SELECT DISTINCT ON (ts.user_id)
+        ts.user_id,
+        u.name,
+        ts.total_score,
+        ts.submitted_at
+      FROM um_tryout_sessions ts
+      JOIN users u ON u.id = ts.user_id
+      WHERE ts.package_id = $1
+        AND ts.submitted_at IS NOT NULL
+        AND ts.total_score IS NOT NULL
+      ORDER BY ts.user_id, ts.submitted_at DESC
+    `, [packageId]);
+
+    // Sort by total_score descending and assign ranks
+    const sorted = leaderboardRes.rows
+      .sort((a, b) => (b.total_score || 0) - (a.total_score || 0))
+      .slice(0, limit)
+      .map((row, idx) => ({
+        rank: idx + 1,
+        user_id: row.user_id,
+        name: row.name,
+        score: Math.round(row.total_score || 0),
+        submitted_at: row.submitted_at,
+      }));
+
+    // Find current user's rank
+    const allSorted = leaderboardRes.rows
+      .sort((a, b) => (b.total_score || 0) - (a.total_score || 0));
+    const userIdx = allSorted.findIndex(r => r.user_id === req.user.id);
+    const userRank = userIdx >= 0 ? {
+      rank: userIdx + 1,
+      score: Math.round(allSorted[userIdx].total_score || 0),
+      total_participants: allSorted.length,
+    } : null;
+
+    res.json({
+      success: true,
+      data: {
+        leaderboard: sorted,
+        user_rank: userRank,
+        total_participants: allSorted.length,
+      }
+    });
+  } catch (error) {
+    console.error('UM Tryout Leaderboard error:', error);
+    next(error);
+  }
+});
+
+// Leaderboard for Ujian Mandiri Latihan Soal
+router.get('/latihan/leaderboard/:latihanId', verifyToken, async (req, res, next) => {
+  const { latihanId } = req.params;
+  const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+
+  try {
+    const leaderboardRes = await pool.query(`
+      SELECT DISTINCT ON (ls.user_id)
+        ls.user_id,
+        u.name,
+        ls.irt_score,
+        ls.submitted_at
+      FROM latihan_sessions ls
+      JOIN users u ON u.id = ls.user_id
+      WHERE ls.latihan_id = $1
+        AND ls.submitted_at IS NOT NULL
+        AND ls.irt_score IS NOT NULL
+      ORDER BY ls.user_id, ls.submitted_at DESC
+    `, [latihanId]);
+
+    // Sort by irt_score descending and assign ranks
+    const sorted = leaderboardRes.rows
+      .sort((a, b) => (b.irt_score || 0) - (a.irt_score || 0))
+      .slice(0, limit)
+      .map((row, idx) => ({
+        rank: idx + 1,
+        user_id: row.user_id,
+        name: row.name,
+        score: Math.round(row.irt_score || 0),
+        submitted_at: row.submitted_at,
+      }));
+
+    // Find current user's rank
+    const allSorted = leaderboardRes.rows
+      .sort((a, b) => (b.irt_score || 0) - (a.irt_score || 0));
+    const userIdx = allSorted.findIndex(r => r.user_id === req.user.id);
+    const userRank = userIdx >= 0 ? {
+      rank: userIdx + 1,
+      score: Math.round(allSorted[userIdx].irt_score || 0),
+      total_participants: allSorted.length,
+    } : null;
+
+    res.json({
+      success: true,
+      data: {
+        leaderboard: sorted,
+        user_rank: userRank,
+        total_participants: allSorted.length,
+      }
+    });
+  } catch (error) {
+    console.error('UM Latihan Leaderboard error:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

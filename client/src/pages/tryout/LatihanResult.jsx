@@ -1,13 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import DiscussQuestionModal from '../../components/DiscussQuestionModal';
 import MathText from '../../components/MathText';
+import { tryoutService } from '../../services/api';
+import NationalLeaderboardCard from '../../components/NationalLeaderboardCard';
 
 const LatihanResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
   const [filter, setFilter] = useState('all'); // 'all' | 'wrong'
 
   // Discussion State
@@ -15,13 +18,31 @@ const LatihanResult = () => {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Leaderboard State
+  const [leaderboard, setLeaderboard] = useState(null);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+
   const openDiscussion = (question) => {
     setSelectedQuestion(question);
     setIsDiscussOpen(true);
   };
 
   // Data passed from LatihanPraktik via navigation state
-  const { questions = [], answers = {}, subjectName = 'Latihan', subjectId = '', irtData = null } = location.state || {};
+  const { questions = [], answers = {}, subjectName = 'Latihan', subjectId = '', topicId = '', irtData = null } = location.state || {};
+
+  useEffect(() => {
+    if (subjectId) {
+      setLeaderboardLoading(true);
+      tryoutService.getLatihanLeaderboard(subjectId, topicId, 10)
+        .then((res) => {
+          if (res.data?.success) {
+            setLeaderboard(res.data.data);
+          }
+        })
+        .catch((err) => console.error('Error fetching latihan leaderboard:', err))
+        .finally(() => setLeaderboardLoading(false));
+    }
+  }, [subjectId, topicId]);
 
   // Calculate results
   const totalQuestions = questions.length;
@@ -193,152 +214,171 @@ const LatihanResult = () => {
           </div>
         </section>
 
-        {/* Pembahasan Section */}
-        <section className="pb-20 px-4 md:px-10 max-w-[1440px] mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
-            <div>
-              <h2 className="text-[22px] font-bold text-[#191b24]">Pembahasan Soal</h2>
-              <p className="text-[13px] text-[#424656]">Review setiap soal dan pahami penjelasan jawaban yang benar.</p>
+        {/* Main Content Grid */}
+        <div className="max-w-[1440px] mx-auto px-4 md:px-10 pb-12 grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Pembahasan */}
+          <section className="lg:col-span-8 order-2 lg:order-1">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
+              <div>
+                <h2 className="text-[22px] font-bold text-[#191b24]">Pembahasan Soal</h2>
+                <p className="text-[13px] text-[#424656]">Review setiap soal dan pahami penjelasan jawaban yang benar.</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setFilter('all')}
+                  className={`px-4 py-2 font-medium text-[14px] rounded-lg flex items-center gap-2 transition-colors ${
+                    filter === 'all' ? 'bg-[#0050cb] text-white' : 'bg-[#ecedfa] text-[#424656] hover:bg-[#e1e2ee]'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">filter_list</span>
+                  Semua Soal
+                </button>
+                <button 
+                  onClick={() => setFilter('wrong')}
+                  className={`px-4 py-2 font-medium text-[14px] rounded-lg flex items-center gap-2 transition-colors ${
+                    filter === 'wrong' ? 'bg-[#ba1a1a] text-white' : 'bg-[#ecedfa] text-[#424656] hover:bg-[#e1e2ee]'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[18px]">error</span>
+                  Salah Saja ({incorrectCount})
+                </button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button 
-                onClick={() => setFilter('all')}
-                className={`px-4 py-2 font-medium text-[14px] rounded-lg flex items-center gap-2 transition-colors ${
-                  filter === 'all' ? 'bg-[#0050cb] text-white' : 'bg-[#ecedfa] text-[#424656] hover:bg-[#e1e2ee]'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">filter_list</span>
-                Semua Soal
-              </button>
-              <button 
-                onClick={() => setFilter('wrong')}
-                className={`px-4 py-2 font-medium text-[14px] rounded-lg flex items-center gap-2 transition-colors ${
-                  filter === 'wrong' ? 'bg-[#ba1a1a] text-white' : 'bg-[#ecedfa] text-[#424656] hover:bg-[#e1e2ee]'
-                }`}
-              >
-                <span className="material-symbols-outlined text-[18px]">error</span>
-                Salah Saja ({incorrectCount})
-              </button>
-            </div>
-          </div>
 
-          {/* Questions List */}
-          <div className="space-y-4">
-            {filteredResults.map((qr) => (
-              <article key={qr.id} className="bg-white rounded-[16px] border border-[#c2c6d8]/30 shadow-sm overflow-hidden">
-                <div className="p-4 md:p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <span className="bg-[#e1e2ee] text-[#424656] w-10 h-10 rounded-lg flex items-center justify-center font-bold text-[14px]">
-                        {String(qr.idx + 1).padStart(2, '0')}
-                      </span>
-                      <span className={`text-[11px] font-bold uppercase px-2.5 py-1 rounded-lg ${
-                        qr.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                        qr.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
-                        'bg-[#c2e8ff] text-[#004d67]'
-                      }`}>
-                        {qr.difficulty === 'easy' ? 'Mudah' : qr.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
+            {/* Questions List */}
+            <div className="space-y-4">
+              {filteredResults.map((qr) => (
+                <article key={qr.id} className="bg-white rounded-[16px] border border-[#c2c6d8]/30 shadow-sm overflow-hidden">
+                  <div className="p-4 md:p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <span className="bg-[#e1e2ee] text-[#424656] w-10 h-10 rounded-lg flex items-center justify-center font-bold text-[14px]">
+                          {String(qr.idx + 1).padStart(2, '0')}
+                        </span>
+                        <span className={`text-[11px] font-bold uppercase px-2.5 py-1 rounded-lg ${
+                          qr.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                          qr.difficulty === 'hard' ? 'bg-red-100 text-red-700' :
+                          'bg-[#c2e8ff] text-[#004d67]'
+                        }`}>
+                          {qr.difficulty === 'easy' ? 'Mudah' : qr.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
+                        </span>
+                      </div>
+                      <span className={`flex items-center gap-1 font-medium text-[12px] ${qr.isCorrect ? 'text-[#006688]' : 'text-[#ba1a1a]'}`}>
+                        <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          {qr.isCorrect ? 'check_circle' : 'cancel'}
+                        </span>
+                        {qr.isCorrect ? 'Benar' : 'Salah'}
                       </span>
                     </div>
-                    <span className={`flex items-center gap-1 font-medium text-[12px] ${qr.isCorrect ? 'text-[#006688]' : 'text-[#ba1a1a]'}`}>
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        {qr.isCorrect ? 'check_circle' : 'cancel'}
-                      </span>
-                      {qr.isCorrect ? 'Benar' : 'Salah'}
-                    </span>
-                  </div>
 
-                  {/* Question Content */}
-                  <MathText className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed" text={qr.content || ''} />
+                    {/* Question Content */}
+                    <MathText className="text-[14px] md:text-[15px] font-semibold mb-4 leading-relaxed" text={qr.content || ''} />
 
-                  {/* Answer Choices */}
-                  <div className="space-y-2 mb-4">
-                    {(qr.choices || []).map((choice) => {
-                      const isChosen = choice.id === qr.chosenId;
-                      const isCorrectChoice = choice.is_correct;
-                      
-                      let borderClass = 'border border-[#c2c6d8]/50 bg-[#faf8ff]';
-                      let labelClass = 'border border-[#c2c6d8] text-[#424656]';
-                      let textClass = 'text-[#424656]';
-                      let icon = null;
-                      let tag = null;
+                    {/* Answer Choices */}
+                    <div className="space-y-2 mb-4">
+                      {(qr.choices || []).map((choice) => {
+                        const isChosen = choice.id === qr.chosenId;
+                        const isCorrectChoice = choice.is_correct;
+                        
+                        let borderClass = 'border border-[#c2c6d8]/50 bg-[#faf8ff]';
+                        let labelClass = 'border border-[#c2c6d8] text-[#424656]';
+                        let textClass = 'text-[#424656]';
+                        let icon = null;
+                        let tag = null;
 
-                      if (isCorrectChoice) {
-                        borderClass = 'border-2 border-[#006688] bg-[#c2e8ff]/20';
-                        labelClass = isChosen ? 'bg-[#006688] text-white' : 'border-2 border-[#006688] text-[#006688]';
-                        textClass = 'text-[#191b24] font-medium';
-                        icon = <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>;
-                        if (!isChosen) tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#006688] text-white text-[10px] rounded font-bold uppercase">Jawaban Benar</div>;
-                      }
+                        if (isCorrectChoice) {
+                          borderClass = 'border-2 border-[#006688] bg-[#c2e8ff]/20';
+                          labelClass = isChosen ? 'bg-[#006688] text-white' : 'border-2 border-[#006688] text-[#006688]';
+                          textClass = 'text-[#191b24] font-medium';
+                          icon = <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>;
+                          if (!isChosen) tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#006688] text-white text-[10px] rounded font-bold uppercase">Jawaban Benar</div>;
+                        }
 
-                      if (isChosen && !isCorrectChoice) {
-                        borderClass = 'border-2 border-[#ba1a1a] bg-[#ffdad6]/20';
-                        labelClass = 'bg-[#ba1a1a] text-white';
-                        textClass = 'text-[#191b24] font-medium';
-                        icon = <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>;
-                        tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#ba1a1a] text-white text-[10px] rounded font-bold uppercase">Jawabanmu</div>;
-                      }
+                        if (isChosen && !isCorrectChoice) {
+                          borderClass = 'border-2 border-[#ba1a1a] bg-[#ffdad6]/20';
+                          labelClass = 'bg-[#ba1a1a] text-white';
+                          textClass = 'text-[#191b24] font-medium';
+                          icon = <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>;
+                          tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#ba1a1a] text-white text-[10px] rounded font-bold uppercase">Jawabanmu</div>;
+                        }
 
-                      if (isChosen && isCorrectChoice) {
-                        tag = null; // no tag needed, the green border is enough
-                      }
+                        if (isChosen && isCorrectChoice) {
+                          tag = null; // no tag needed, the green border is enough
+                        }
 
-                      return (
-                        <div key={choice.id} className={`relative flex items-center p-3 rounded-xl ${borderClass}`}>
-                          {tag}
-                          <span className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 text-[12px] font-bold flex-shrink-0 ${labelClass}`}>
-                            {choice.label}
-                          </span>
-                          <MathText className={`text-[13px] flex-1 ${textClass}`} text={choice.content || ''} />
-                          {icon && <span className="flex-shrink-0 ml-2">{icon}</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Pembahasan / Explanation */}
-                  {qr.correctChoice?.explanation && (
-                    <div className="flex flex-col md:flex-row gap-4 mt-2">
-                      <div className="flex-1 bg-[#f2f3ff] rounded-xl p-4 md:p-5 border-l-4 border-[#006688]">
-                        <div className="flex items-center gap-2 mb-2 text-[#006688]">
-                          <span className="material-symbols-outlined text-[18px]">lightbulb</span>
-                          <span className="text-[11px] uppercase tracking-wider font-bold">Penjelasan</span>
-                        </div>
-                        <MathText className="text-[13px] text-[#424656] leading-relaxed" text={qr.correctChoice.explanation || ''} />
-                      </div>
-
-                      {/* Elegant Chat Button */}
-                      <div className="md:w-60 flex-shrink-0">
-                        <button 
-                          onClick={() => openDiscussion(qr)}
-                          className="w-full h-full min-h-[90px] bg-[#faf8ff] border-2 border-dashed border-[#006688]/20 rounded-xl p-4 flex flex-col items-center justify-center text-center group hover:border-[#006688] hover:bg-[#006688]/5 transition-all duration-300"
-                        >
-                          <div className="w-9 h-9 bg-[#006688] rounded-full flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform shadow-sm">
-                            <span className="material-symbols-outlined text-[18px]">psychology</span>
+                        return (
+                          <div key={choice.id} className={`relative flex items-center p-3 rounded-xl ${borderClass}`}>
+                            {tag}
+                            <span className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 text-[12px] font-bold flex-shrink-0 ${labelClass}`}>
+                              {choice.label}
+                            </span>
+                            <MathText className={`text-[13px] flex-1 ${textClass}`} text={choice.content || ''} />
+                            {icon && <span className="flex-shrink-0 ml-2">{icon}</span>}
                           </div>
-                          <span className="text-[11px] font-bold text-[#006688] mb-1">Butuh Bantuan?</span>
-                          <span className="text-[10px] text-[#424656] font-medium leading-tight">Chat dengan Kak Z</span>
-                        </button>
-                      </div>
+                        );
+                      })}
                     </div>
-                  )}
-                </div>
-              </article>
-            ))}
-          </div>
 
-          {/* Discuss Modal */}
-          {selectedQuestion && (
-            <DiscussQuestionModal 
-              isOpen={isDiscussOpen} 
-              onClose={() => setIsDiscussOpen(false)} 
-              question={selectedQuestion} 
+                    {/* Pembahasan / Explanation */}
+                    {qr.correctChoice?.explanation && (
+                      <div className="flex flex-col md:flex-row gap-4 mt-2">
+                        <div className="flex-1 bg-[#f2f3ff] rounded-xl p-4 md:p-5 border-l-4 border-[#006688]">
+                          <div className="flex items-center gap-2 mb-2 text-[#006688]">
+                            <span className="material-symbols-outlined text-[18px]">lightbulb</span>
+                            <span className="text-[11px] uppercase tracking-wider font-bold">Penjelasan</span>
+                          </div>
+                          <MathText className="text-[13px] text-[#424656] leading-relaxed" text={qr.correctChoice.explanation || ''} />
+                        </div>
+
+                        {/* Elegant Chat Button */}
+                        <div className="md:w-60 flex-shrink-0">
+                          <button 
+                            onClick={() => openDiscussion(qr)}
+                            className="w-full h-full min-h-[90px] bg-[#faf8ff] border-2 border-dashed border-[#006688]/20 rounded-xl p-4 flex flex-col items-center justify-center text-center group hover:border-[#006688] hover:bg-[#006688]/5 transition-all duration-300"
+                          >
+                            <div className="w-9 h-9 bg-[#006688] rounded-full flex items-center justify-center text-white mb-2 group-hover:scale-110 transition-transform shadow-sm">
+                              <span className="material-symbols-outlined text-[18px]">psychology</span>
+                            </div>
+                            <span className="text-[11px] font-bold text-[#006688] mb-1">Butuh Bantuan?</span>
+                            <span className="text-[10px] text-[#424656] font-medium leading-tight">Chat dengan Kak Z</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Discuss Modal */}
+            {selectedQuestion && (
+              <DiscussQuestionModal 
+                isOpen={isDiscussOpen} 
+                onClose={() => setIsDiscussOpen(false)} 
+                question={selectedQuestion} 
+              />
+            )}
+          </section>
+
+          {/* Right Column: Leaderboard */}
+          <aside className="lg:col-span-4 lg:self-start lg:sticky lg:top-24 order-1 lg:order-2">
+            <NationalLeaderboardCard
+              leaderboard={leaderboard}
+              loading={leaderboardLoading}
+              currentUserId={user?.id}
+              typeText="latihan ini"
+              type="utbk-latihan"
+              id={subjectId}
+              topicId={topicId}
             />
-          )}
+          </aside>
+        </div>
 
+        {/* Bottom Section: CTA */}
+        <section className="pb-20 px-4 md:px-10 max-w-[1440px] mx-auto">
           {/* Bottom CTA */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 bg-[#f2f3ff] p-8 rounded-[20px] flex flex-col justify-between">
               <div>
                 <h4 className="text-[24px] font-bold text-[#191b24] mb-2">Lanjutkan Belajar</h4>

@@ -22,16 +22,25 @@ router.post('/create', verifyToken, async (req, res, next) => {
        WHERE status IN ('waiting', 'active') AND created_at < NOW() - INTERVAL '5 minutes'`
     );
 
-    // Get battle questions only (source='battle')
-    const questionsRes = await client.query(
+    // Get battle questions first, fallback to manual questions if none exist
+    let questionsRes = await client.query(
       `SELECT id FROM questions WHERE subject_id = $1 AND source = 'battle' ORDER BY RANDOM() LIMIT $2`,
       [subject_id, question_count]
     );
+
+    // Fallback: if no battle-specific questions, use manual questions
+    if (questionsRes.rows.length === 0) {
+      questionsRes = await client.query(
+        `SELECT id FROM questions WHERE subject_id = $1 AND source = 'manual' ORDER BY RANDOM() LIMIT $2`,
+        [subject_id, question_count]
+      );
+    }
+
     const questionIds = questionsRes.rows.map(q => q.id);
 
     if (questionIds.length === 0) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, error: 'Belum ada soal battle untuk subtes ini. Admin perlu menambahkan soal battle terlebih dahulu.' });
+      return res.status(404).json({ success: false, error: 'Belum ada soal untuk subtes ini.' });
     }
 
     // Create match
