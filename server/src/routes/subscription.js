@@ -239,6 +239,10 @@ router.post('/confirm', verifyToken, async (req, res, next) => {
 
       return res.json({ success: true, message: `Status: ${finalStatus}` });
     } catch (verifyErr) {
+      if (process.env.MIDTRANS_IS_PRODUCTION === 'true') {
+        console.error('Midtrans verify failed on production:', verifyErr.message);
+        return res.status(400).json({ success: false, error: 'Verifikasi pembayaran gagal.' });
+      }
       // If Midtrans verification fails in sandbox, force-activate for testing
       console.warn('Midtrans verify failed, force-activating for sandbox:', verifyErr.message);
       await pool.query(`UPDATE payment_transactions SET status = 'settlement', updated_at = NOW() WHERE order_id = $1`, [order_id]);
