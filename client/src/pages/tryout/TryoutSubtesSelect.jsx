@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { tryoutService, subjectService } from '../../services/api';
 import toast from 'react-hot-toast';
 import TryoutVerificationModal from '../../components/tryout/TryoutVerificationModal';
+import StartConfirmationModal from '../../components/StartConfirmationModal';
 
 const ICON_MAP = {
   'penalaran umum': 'psychology',
@@ -41,6 +42,8 @@ const TryoutSubtesSelect = () => {
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [subtestToStart, setSubtestToStart] = useState(null);
   const [hasConfirmedStart, setHasConfirmedStart] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [selectedSubtest, setSelectedSubtest] = useState(null);
 
   const fetchStatus = async () => {
     try {
@@ -128,7 +131,9 @@ const TryoutSubtesSelect = () => {
       }
     }
 
-    await startSubtestDirectly(subtestName);
+    const subObj = subjects.find(s => s.name === subtestName);
+    setSelectedSubtest(subObj);
+    setConfirmOpen(true);
   };
 
   const handleSubmitTryout = () => {
@@ -404,11 +409,30 @@ const TryoutSubtesSelect = () => {
             setHasConfirmedStart(true);
             setShowVerificationModal(false);
             if (subtestToStart) {
-              startSubtestDirectly(subtestToStart);
+              const subObj = subjects.find(s => s.name === subtestToStart);
+              setSelectedSubtest(subObj);
+              setConfirmOpen(true);
             }
           }}
         />
       )}
+
+      <StartConfirmationModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          if (selectedSubtest) {
+            startSubtestDirectly(selectedSubtest.name);
+          }
+        }}
+        title="Apakah Anda yakin ingin memulai subtes?"
+        subtitle={selectedSubtest?.name}
+        details={[
+          { label: 'Jumlah Soal', value: `${selectedSubtest?.questionCount || 0} soal`, icon: 'description' },
+          { label: 'Durasi', value: `${selectedSubtest?.durationMin || 0} menit`, icon: 'schedule' }
+        ]}
+      />
     </div>
   );
 };

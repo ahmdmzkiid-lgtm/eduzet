@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { subjectService } from '../../services/api';
 import NotificationDropdown from '../../components/NotificationDropdown';
+import StartConfirmationModal from '../../components/StartConfirmationModal';
 
 const TopNavbar = ({ user, isAdmin, onLogout }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -110,6 +111,8 @@ const TopikLatihan = () => {
   const [subject, setSubject] = useState(null);
   const [topics, setTopics] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState(null);
 
   useEffect(() => {
     fetchContent();
@@ -258,7 +261,15 @@ const TopikLatihan = () => {
                         )}
 
                         <button 
-                          onClick={(e) => { e.stopPropagation(); navigate(`/latihan/praktik/${subjectId}?topic_id=${item.id}`); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setConfirmData({
+                              topicId: item.id,
+                              title: item.title,
+                              questionsCount: item.questions_count,
+                            });
+                            setConfirmOpen(true);
+                          }}
                           className="w-full py-3 bg-white border border-[#0050cb] text-[#0050cb] font-bold text-[14px] rounded-lg hover:bg-[#0050cb] hover:text-white transition-all duration-200 active:scale-95"
                         >
                           {isDone ? 'Ulangi Latihan' : 'Mulai'}
@@ -277,6 +288,23 @@ const TopikLatihan = () => {
           )}
         </section>
       </main>
+
+      <StartConfirmationModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          if (confirmData) {
+            navigate(`/latihan/praktik/${subjectId}?topic_id=${confirmData.topicId}`);
+          }
+        }}
+        title="Apakah Anda yakin ingin memulai latihan?"
+        subtitle={confirmData?.title}
+        details={[
+          { label: 'Jumlah Soal', value: `${confirmData?.questionsCount || 0} soal`, icon: 'description' },
+          { label: 'Tipe Sesi', value: 'Latihan Soal', icon: 'school' }
+        ]}
+      />
 
       <footer className="bg-white border-t border-[#c2c6d8]/30">
         <div className="px-6 lg:px-10 max-w-[1440px] mx-auto py-8 border-t border-[#c2c6d8]/20">

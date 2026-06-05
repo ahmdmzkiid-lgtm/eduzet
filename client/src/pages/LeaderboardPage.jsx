@@ -69,12 +69,6 @@ const LeaderboardPage = () => {
     3: 'bg-[#CD7F32] text-white',
   };
 
-  const medalIcons = {
-    1: '🥇',
-    2: '🥈',
-    3: '🥉',
-  };
-
   return (
     <div className="bg-[#faf8ff] text-[#191b24] min-h-screen flex flex-col font-sans">
       {/* TopAppBar */}
@@ -169,7 +163,7 @@ const LeaderboardPage = () => {
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold shrink-0 shadow-sm ${
                         medalColors[entry.rank] || 'bg-[#ecedfa] text-[#424656]'
                       }`}>
-                        {medalIcons[entry.rank] || entry.rank}
+                        {entry.rank}
                       </div>
                     </div>
 

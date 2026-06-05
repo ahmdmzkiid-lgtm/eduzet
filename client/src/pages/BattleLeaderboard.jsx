@@ -39,10 +39,10 @@ const BattleLeaderboard = () => {
   };
 
   const getRankDisplay = (rank) => {
-    if (rank === 1) return { emoji: '🥇', bg: 'bg-yellow-50', border: 'border-yellow-200' };
-    if (rank === 2) return { emoji: '🥈', bg: 'bg-gray-50', border: 'border-gray-200' };
-    if (rank === 3) return { emoji: '🥉', bg: 'bg-orange-50', border: 'border-orange-200' };
-    return { emoji: `#${rank}`, bg: '', border: 'border-transparent' };
+    if (rank === 1) return { display: '1', bg: 'bg-yellow-50', border: 'border-yellow-200', textClass: 'text-[#7a6200]' };
+    if (rank === 2) return { display: '2', bg: 'bg-gray-50', border: 'border-gray-200', textClass: 'text-[#555]' };
+    if (rank === 3) return { display: '3', bg: 'bg-orange-50', border: 'border-orange-200', textClass: 'text-[#cd7f32]' };
+    return { display: `${rank}`, bg: '', border: 'border-transparent', textClass: 'text-[#727687]' };
   };
 
   if (loading) {
@@ -121,7 +121,7 @@ const BattleLeaderboard = () => {
             leaderboard.map((entry, index) => {
               const rank = index + 1;
               const isMe = entry.user_id === user?.id;
-              const { emoji, bg } = getRankDisplay(rank);
+              const { display, bg, textClass } = getRankDisplay(rank);
 
               return (
                 <div
@@ -131,8 +131,8 @@ const BattleLeaderboard = () => {
                   }`}
                 >
                   <div className="col-span-1">
-                    <span className={`text-[16px] font-bold ${rank <= 3 ? '' : 'text-[#727687]'}`}>
-                      {emoji}
+                    <span className={`text-[16px] font-bold ${textClass}`}>
+                      {display}
                     </span>
                   </div>
                   <div className="col-span-4 flex items-center gap-3 min-w-0">

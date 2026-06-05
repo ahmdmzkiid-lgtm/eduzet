@@ -105,8 +105,9 @@ const TryoutUMResult = () => {
 
 
   const totalQuestions = questions.length;
+  const unansweredCount = typeof scoreBreakdown.kosong === 'number' ? scoreBreakdown.kosong : questions.filter(q => !q.chosenChoiceId).length;
   const correctCount = scoreBreakdown.benar || questions.filter(q => q.isCorrect).length;
-  const incorrectCount = scoreBreakdown.salah || (totalQuestions - correctCount);
+  const incorrectCount = typeof scoreBreakdown.salah === 'number' ? scoreBreakdown.salah : (totalQuestions - correctCount - unansweredCount);
   const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const classicalScore = totalScore || (correctCount * 100);
 
@@ -234,6 +235,11 @@ const TryoutUMResult = () => {
                     <span className="text-[20px] md:text-[24px] font-semibold">{totalQuestions}</span>
                   </div>
                   <span className="text-[10px] md:text-[12px] text-white/60 uppercase tracking-wider font-semibold">Total Soal</span>
+                  {typeof unansweredCount === 'number' && (
+                    <span className="text-[10px] text-white/80 mt-1">
+                      Kosong: <strong>{unansweredCount}</strong>
+                    </span>
+                  )}
                 </div>
                 <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 md:p-6 flex flex-col items-center justify-center">
                   <div className="flex items-center gap-2 mb-1">
@@ -277,9 +283,17 @@ const TryoutUMResult = () => {
                         {qr.difficulty === 'easy' ? 'Mudah' : qr.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                       </span>
                     </div>
-                    <span className={`flex items-center gap-1 font-medium text-[12px] ${qr.isCorrect ? 'text-[#006688]' : 'text-[#ba1a1a]'}`}>
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>{qr.isCorrect ? 'check_circle' : 'cancel'}</span>
-                      {qr.isCorrect ? 'Benar' : qr.isAnswered ? 'Salah' : 'Tidak Dijawab'}
+                    <span className={`flex items-center gap-1 font-medium text-[12px] ${
+                      qr.isCorrect
+                        ? 'text-[#006688]'
+                        : !qr.isAnswered
+                        ? 'text-[#727687]'
+                        : 'text-[#ba1a1a]'
+                    }`}>
+                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        {qr.isCorrect ? 'check_circle' : !qr.isAnswered ? 'remove_circle' : 'cancel'}
+                      </span>
+                      {qr.isCorrect ? 'Benar' : !qr.isAnswered ? 'Kosong' : 'Salah'}
                     </span>
                   </div>
 

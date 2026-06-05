@@ -347,12 +347,18 @@ const LatihanSoalUMResult = () => {
                         {qr.difficulty === 'easy' ? 'Mudah' : qr.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                       </span>
                     </div>
-                    <span className={`flex items-center gap-1 font-medium text-[12px] ${qr.isCorrect ? 'text-[#006688]' : 'text-[#ba1a1a]'}`}>
-                      <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                        {qr.isCorrect ? 'check_circle' : 'cancel'}
+                     <span className={`flex items-center gap-1 font-medium text-[12px] ${
+                        qr.isCorrect
+                          ? 'text-[#006688]'
+                          : !qr.isAnswered
+                          ? 'text-[#727687]'
+                          : 'text-[#ba1a1a]'
+                      }`}>
+                        <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          {qr.isCorrect ? 'check_circle' : !qr.isAnswered ? 'remove_circle' : 'cancel'}
+                        </span>
+                        {qr.isCorrect ? 'Benar' : !qr.isAnswered ? 'Kosong' : 'Salah'}
                       </span>
-                      {qr.isCorrect ? 'Benar' : 'Salah'}
-                    </span>
                   </div>
 
                   {qr.image_url && qr.image_position === 'before' && (

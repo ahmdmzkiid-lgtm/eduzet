@@ -425,6 +425,9 @@ const TryoutResult = () => {
             {(result.subjects || []).map((subject, idx) => {
               const colors = getSubjectColors(subject.statusColor);
               const isGood = subject.statusColor === 'primary' || subject.statusColor === 'secondary';
+              const subjectQuestions = result.questions?.filter(q => q.subject === subject.name) || [];
+              const unansweredCount = subjectQuestions.filter(q => q.userAnswer === null).length;
+              const incorrectCount = subjectQuestions.length - subject.correct - unansweredCount;
 
               return (
                 <section
@@ -459,6 +462,11 @@ const TryoutResult = () => {
                       <div>
                         <span className="block text-[#424656] text-[12px] font-semibold mb-1">Akurasi</span>
                         <span className="text-[24px] font-bold text-[#191b24]">{subject.correct || 0}/{subject.total || 0}</span>
+                        <div className="text-[10px] text-[#727687] mt-0.5">
+                          <span>Salah: {incorrectCount}</span>
+                          <span className="mx-1">•</span>
+                          <span>Kosong: {unansweredCount}</span>
+                        </div>
                       </div>
                       <div>
                         <span className="block text-[#424656] text-[12px] font-semibold mb-1">Avg. Speed</span>
@@ -539,20 +547,22 @@ const TryoutResult = () => {
               {(filteredQuestions || []).map((question) => (
                 <div
                   key={question.id}
-                  className={`p-5 md:p-7 ${question.isCorrect ? 'bg-white/50' : 'bg-[#ffdad6]/5'}`}
-                  style={{ borderLeft: `4px solid ${question.isCorrect ? '#00c1fd' : '#ba1a1a'}` }}
+                  className={`p-5 md:p-7 ${question.isCorrect ? 'bg-white/50' : question.userAnswer === null ? 'bg-[#ecedfa]/5' : 'bg-[#ffdad6]/5'}`}
+                  style={{ borderLeft: `4px solid ${question.isCorrect ? '#00c1fd' : question.userAnswer === null ? '#c2c6d8' : '#ba1a1a'}` }}
                 >
                   <div className="flex flex-wrap items-center gap-3 mb-4">
                     <span className="px-3 py-1 bg-[#ecedfa] rounded text-[12px] font-semibold">Soal #{question.questionNumber}</span>
                     <span className={`px-3 py-1 text-[12px] font-semibold flex items-center gap-1 rounded ${
                       question.isCorrect
                         ? 'bg-[#00c1fd]/10 text-[#006688]'
+                        : question.userAnswer === null
+                        ? 'bg-[#ecedfa] text-[#424656]'
                         : 'bg-[#ffdad6] text-[#93000a]'
                     }`}>
                       <span className="material-symbols-outlined text-[16px]">
-                        {question.isCorrect ? 'check_circle' : 'cancel'}
+                        {question.isCorrect ? 'check_circle' : question.userAnswer === null ? 'remove_circle' : 'cancel'}
                       </span>
-                      {question.isCorrect ? 'Benar' : 'Salah'}
+                      {question.isCorrect ? 'Benar' : question.userAnswer === null ? 'Kosong' : 'Salah'}
                     </span>
                     <span className="px-3 py-1 border border-[#c2c6d8] rounded text-[12px] font-semibold text-[#424656]">{question.subject}</span>
                     <span className={`px-3 py-1 text-[12px] font-semibold rounded ${

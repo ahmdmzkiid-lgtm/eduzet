@@ -55,7 +55,8 @@ const LatihanResult = () => {
     if (isCorrect) correctCount++;
     return { ...q, idx, chosenId, chosenChoice, correctChoice, isCorrect, isAnswered: !!chosenId };
   });
-  const incorrectCount = totalQuestions - correctCount;
+  const unansweredCount = questionResults.filter(r => !r.isAnswered).length;
+  const incorrectCount = totalQuestions - correctCount - unansweredCount;
   const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   // IRT Score from backend (0-1000 scale)
@@ -208,6 +209,11 @@ const LatihanResult = () => {
                     <span className="text-[20px] md:text-[24px] font-semibold">{totalQuestions}</span>
                   </div>
                   <span className="text-[10px] md:text-[12px] text-white/60 uppercase tracking-wider font-semibold">Total Soal</span>
+                  {typeof unansweredCount === 'number' && (
+                    <span className="text-[10px] text-white/80 mt-1">
+                      Kosong: <strong>{unansweredCount}</strong>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -264,11 +270,17 @@ const LatihanResult = () => {
                           {qr.difficulty === 'easy' ? 'Mudah' : qr.difficulty === 'hard' ? 'Sulit' : 'Sedang'}
                         </span>
                       </div>
-                      <span className={`flex items-center gap-1 font-medium text-[12px] ${qr.isCorrect ? 'text-[#006688]' : 'text-[#ba1a1a]'}`}>
+                      <span className={`flex items-center gap-1 font-medium text-[12px] ${
+                        qr.isCorrect
+                          ? 'text-[#006688]'
+                          : !qr.isAnswered
+                          ? 'text-[#727687]'
+                          : 'text-[#ba1a1a]'
+                      }`}>
                         <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          {qr.isCorrect ? 'check_circle' : 'cancel'}
+                          {qr.isCorrect ? 'check_circle' : !qr.isAnswered ? 'remove_circle' : 'cancel'}
                         </span>
-                        {qr.isCorrect ? 'Benar' : 'Salah'}
+                        {qr.isCorrect ? 'Benar' : !qr.isAnswered ? 'Kosong' : 'Salah'}
                       </span>
                     </div>
 

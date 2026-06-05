@@ -7,6 +7,7 @@ import Footer from '../components/Footer';
 import toast from 'react-hot-toast';
 import TryoutVerificationModal from '../components/tryout/TryoutVerificationModal';
 import NotificationDropdown from '../components/NotificationDropdown';
+import StartConfirmationModal from '../components/StartConfirmationModal';
 
 const PLAN_RANK = {
   gratis: 0,
@@ -175,6 +176,10 @@ export default function UjianMandiriDetail() {
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [hasConfirmedStart, setHasConfirmedStart] = useState(false);
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmType, setConfirmType] = useState(null); // 'tryout' | 'latihan'
+  const [confirmData, setConfirmData] = useState(null); // item to start (pkg or lat)
+
   const fetchStatus = async () => {
     if (selectedPkg) {
       try {
@@ -211,8 +216,10 @@ export default function UjianMandiriDetail() {
         if (!status || status.status !== 'approved' || !hasConfirmedStart) {
           setShowVerificationModal(true);
         } else {
-          // If approved and confirmed, navigate directly
-          navigate(`/ujian-mandiri/${id}/tryout/${pkg.id}`);
+          // If approved and confirmed, open confirmation modal
+          setConfirmType('tryout');
+          setConfirmData(pkg);
+          setConfirmOpen(true);
         }
       } catch (err) {
         toast.error('Gagal memeriksa status verifikasi');
@@ -220,7 +227,9 @@ export default function UjianMandiriDetail() {
         setCheckingRegistration(false);
       }
     } else {
-      navigate(`/ujian-mandiri/${id}/tryout/${pkg.id}`);
+      setConfirmType('tryout');
+      setConfirmData(pkg);
+      setConfirmOpen(true);
     }
   };
 
@@ -437,7 +446,9 @@ export default function UjianMandiriDetail() {
                     toast.error(`Latihan ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
                     return;
                   }
-                  navigate(`/ujian-mandiri/${id}/latihan/${lat.id}`);
+                  setConfirmType('latihan');
+                  setConfirmData(lat);
+                  setConfirmOpen(true);
                 };
 
                 return (
@@ -557,14 +568,34 @@ export default function UjianMandiriDetail() {
             setHasConfirmedStart(true);
             setShowVerificationModal(false);
             if (selectedPkg) {
-              // Use setTimeout to ensure modal closes before navigation
-              setTimeout(() => {
-                navigate(`/ujian-mandiri/${id}/tryout/${selectedPkg.id}`);
-              }, 100);
+              setConfirmType('tryout');
+              setConfirmData(selectedPkg);
+              setConfirmOpen(true);
             }
           }}
         />
       )}
+
+      <StartConfirmationModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          if (confirmData) {
+            if (confirmType === 'tryout') {
+              navigate(`/ujian-mandiri/${id}/tryout/${confirmData.id}`);
+            } else if (confirmType === 'latihan') {
+              navigate(`/ujian-mandiri/${id}/latihan/${confirmData.id}`);
+            }
+          }
+        }}
+        title={confirmType === 'tryout' ? "Apakah Anda yakin ingin memulai tryout?" : "Apakah Anda yakin ingin memulai latihan?"}
+        subtitle={confirmData?.title}
+        details={[
+          { label: 'Jumlah Soal', value: `${confirmData?.soal_count || 0} soal`, icon: 'description' },
+          { label: 'Durasi', value: confirmType === 'tryout' ? `${confirmData?.duration || 0} menit` : 'Tanpa Batasan', icon: 'schedule' }
+        ]}
+      />
     </div>
   );
 }
