@@ -65,6 +65,8 @@ const LatihanSoalUM = () => {
         } else if (code === 'FREE_LIMIT_REACHED') {
           setError('FREE_LIMIT_REACHED');
         } else {
+          const errMsg = err.response?.data?.error || err.message || 'Gagal memuat latihan soal';
+          toast.error(errMsg);
           navigate(`/ujian-mandiri/${ujianId}`);
         }
       } finally {
@@ -314,6 +316,17 @@ const LatihanSoalUM = () => {
           <button onClick={() => navigate(`/ujian-mandiri/${ujianId}`)} className="px-8 py-3 bg-[#0050cb] text-white font-bold rounded-xl hover:bg-[#003da6] transition-all">
             Kembali
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-[#faf8ff] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-14 h-14 border-4 border-[#0050cb] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-5 text-[#424656] font-medium text-[15px]">Menyelaraskan soal...</p>
         </div>
       </div>
     );

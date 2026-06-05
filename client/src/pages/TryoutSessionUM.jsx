@@ -114,7 +114,12 @@ const TryoutSessionUM = () => {
             const savedNav = localStorage.getItem(LS_NAV);
             if (savedNav) {
               const nav = JSON.parse(savedNav);
-              setCurrentIndex(nav.questionIdx || 0);
+              const restoredIdx = nav.questionIdx || 0;
+              if (restoredIdx >= 0 && restoredIdx < fetchedQuestions.length) {
+                setCurrentIndex(restoredIdx);
+              } else {
+                setCurrentIndex(0);
+              }
             }
 
             const savedTimer = localStorage.getItem(LS_TIMER);
@@ -144,7 +149,14 @@ const TryoutSessionUM = () => {
         }
       } catch (err) {
         console.error('Failed to initialize UM tryout session:', err);
-        toast.error('Gagal memulai sesi tryout');
+        const errMsg = err.response?.data?.error || err.message || 'Gagal memulai sesi tryout';
+        toast.error(errMsg);
+        // Clear all session-related localStorage keys on failure to avoid infinite reload loop
+        localStorage.removeItem(LS_SESSION);
+        localStorage.removeItem(LS_ANSWERS);
+        localStorage.removeItem(LS_FLAGGED);
+        localStorage.removeItem(LS_TIMER);
+        localStorage.removeItem(LS_NAV);
         navigate(`/ujian-mandiri/${ujianId}`);
       } finally {
         setLoading(false);
@@ -313,6 +325,17 @@ const TryoutSessionUM = () => {
           <button onClick={() => navigate(`/ujian-mandiri/${ujianId}`)} className="px-8 py-3 bg-[#0050cb] text-white font-bold rounded-xl hover:bg-[#003da6] transition-all">
             Kembali
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen bg-[#faf8ff] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-14 h-14 border-4 border-[#0050cb] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="mt-5 text-[#424656] font-medium text-[15px]">Menyelaraskan soal...</p>
         </div>
       </div>
     );
