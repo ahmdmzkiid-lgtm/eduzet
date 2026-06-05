@@ -44,6 +44,8 @@ export default function PricingPage() {
   const { user, refreshUser } = useContext(AuthContext);
   const [plans, setPlans] = useState([]);
   const [currentSub, setCurrentSub] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [checkingTx, setCheckingTx] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(null);
   const [searchParams] = useSearchParams();
@@ -51,12 +53,14 @@ export default function PricingPage() {
 
   const loadData = useCallback(async () => {
     try {
-      const [plansRes, subRes] = await Promise.all([
+      const [plansRes, subRes, txRes] = await Promise.all([
         subscriptionService.getPlans(),
         user ? subscriptionService.getMySubscription() : Promise.resolve({ data: { data: null } }),
+        user ? subscriptionService.getTransactions() : Promise.resolve({ data: { data: [] } }),
       ]);
       setPlans(plansRes.data.data || []);
       setCurrentSub(subRes.data.data);
+      setTransactions(txRes.data.data || []);
     } catch (err) {
       console.error('Failed to load plans:', err);
     } finally {
@@ -141,6 +145,7 @@ export default function PricingPage() {
         onPending: () => {
           restoreScroll();
           toast('Menunggu pembayaran...', { icon: '⏳' });
+          loadData();
           setPaying(null);
         },
         onError: () => {
@@ -150,6 +155,7 @@ export default function PricingPage() {
         },
         onClose: () => {
           restoreScroll();
+          loadData();
           setPaying(null);
         },
       });
@@ -159,7 +165,28 @@ export default function PricingPage() {
     }
   };
 
+  const handleConfirmPending = async (orderId) => {
+    setCheckingTx(orderId);
+    try {
+      const res = await subscriptionService.confirmPayment(orderId);
+      if (res.data?.success) {
+        toast.success('Status pembayaran berhasil diperbarui!');
+        await refreshUser();
+        await loadData();
+      } else {
+        toast.error(res.data?.error || 'Gagal memverifikasi pembayaran');
+      }
+    } catch (err) {
+      console.error(err);
+      await refreshUser();
+      await loadData();
+    } finally {
+      setCheckingTx(null);
+    }
+  };
+
   const currentPlanName = currentSub?.plan_name || user?.current_plan || 'gratis';
+  const pendingTxs = transactions.filter(t => t.status === 'pending');
 
   const formatPrice = (price) => {
     if (price === 0) return { amount: 'Rp0', period: '' };
@@ -207,6 +234,30 @@ export default function PricingPage() {
 
       {/* Plans Grid */}
       <div className="max-w-5xl mx-auto px-4 pb-24">
+        {/* Pending Transactions Alert */}
+        {pendingTxs.length > 0 && (
+          <div className="mb-8 space-y-3">
+            {pendingTxs.map(tx => (
+              <div key={tx.id} className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm shadow-sm">
+                <div className="flex items-center gap-3 text-amber-800">
+                  <span className="material-symbols-outlined text-amber-600 shrink-0">hourglass_empty</span>
+                  <span>
+                    Pembayaran untuk paket <strong className="capitalize">{tx.plan_name}</strong> sebesar <strong>Rp{tx.amount.toLocaleString('id-ID')}</strong> masih tertunda. 
+                    Jika Anda sudah membayar, silakan klik tombol verifikasi di samping.
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleConfirmPending(tx.order_id)}
+                  disabled={checkingTx === tx.order_id}
+                  className="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold transition-all text-center shrink-0 disabled:opacity-50 text-xs"
+                >
+                  {checkingTx === tx.order_id ? 'Memproses...' : 'Cek Status Pembayaran'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {plans.map((plan) => {
             const style = PLAN_STYLES[plan.name] || PLAN_STYLES.gratis;

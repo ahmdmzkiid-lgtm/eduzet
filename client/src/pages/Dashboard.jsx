@@ -146,8 +146,16 @@ const Dashboard = () => {
   const [schedule, setSchedule] = useState(DEFAULT_SCHEDULE);
   const [plans, setPlans] = useState([]);
   const [paying, setPaying] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [checkingTx, setCheckingTx] = useState(null);
   const [riwayatData, setRiwayatData] = useState(null);
   const [loadingRiwayat, setLoadingRiwayat] = useState(true);
+
+  const loadTransactions = () => {
+    subscriptionService.getTransactions().then(r => {
+      setTransactions(r.data?.data || []);
+    }).catch(() => {});
+  };
 
   useEffect(() => {
     settingsService.get().then(r => {
@@ -166,6 +174,8 @@ const Dashboard = () => {
     subscriptionService.getPlans().then(r => {
       setPlans(r.data?.data || []);
     }).catch(() => {});
+
+    loadTransactions();
 
     activityService.getRiwayat().then(res => {
       if (res.data?.success) {
@@ -275,6 +285,28 @@ const Dashboard = () => {
     }
   };
 
+  const handleConfirmPending = async (orderId) => {
+    setCheckingTx(orderId);
+    try {
+      const res = await subscriptionService.confirmPayment(orderId);
+      if (res.data?.success) {
+        toast.success('Status pembayaran berhasil diperbarui!');
+        await refreshUser();
+        loadTransactions();
+      } else {
+        toast.error(res.data?.error || 'Gagal memverifikasi pembayaran');
+      }
+    } catch (err) {
+      console.error(err);
+      await refreshUser();
+      loadTransactions();
+    } finally {
+      setCheckingTx(null);
+    }
+  };
+
+  const pendingTxs = transactions.filter(t => t.status === 'pending');
+
   return (
     <div className="min-h-screen text-[#191b24]" style={{ fontFamily: "'Inter', sans-serif", backgroundColor: '#faf8ff' }}>
       <Toaster position="top-right" />
@@ -309,6 +341,30 @@ const Dashboard = () => {
 
       {/* ── MAIN CONTENT ── */}
       <main className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-10 py-6 sm:py-10" style={{ backgroundImage: 'radial-gradient(at 0% 0%, hsla(220,100%,95%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(190,100%,95%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(250,100%,95%,1) 0, transparent 50%)' }}>
+
+        {/* Pending Transactions Alert */}
+        {pendingTxs.length > 0 && (
+          <div className="mb-8 space-y-3">
+            {pendingTxs.map(tx => (
+              <div key={tx.id} className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm shadow-sm max-w-5xl mx-auto">
+                <div className="flex items-center gap-3 text-amber-800">
+                  <span className="material-symbols-outlined text-amber-600 shrink-0">hourglass_empty</span>
+                  <span>
+                    Pembayaran untuk paket <strong className="capitalize">{tx.plan_name}</strong> sebesar <strong>Rp{tx.amount.toLocaleString('id-ID')}</strong> masih tertunda. 
+                    Jika Anda sudah membayar, silakan klik tombol verifikasi di samping.
+                  </span>
+                </div>
+                <button
+                  onClick={() => handleConfirmPending(tx.order_id)}
+                  disabled={checkingTx === tx.order_id}
+                  className="w-full sm:w-auto px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-semibold transition-all text-center shrink-0 disabled:opacity-50 text-xs"
+                >
+                  {checkingTx === tx.order_id ? 'Memproses...' : 'Cek Status Pembayaran'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Active Learning (Replaces Welcome/Stats) */}
         <section className="mb-20">
