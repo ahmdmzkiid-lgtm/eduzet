@@ -203,6 +203,7 @@ router.get('/users', verifyToken, verifyAdmin, async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const offset = (page - 1) * limit;
     const role = req.query.role; // 'student', 'admin', or undefined for all
+    const plan = req.query.plan; // 'gratis', 'premium', 'sultan', or undefined for all
     const search = req.query.search || '';
 
     let whereClause = '';
@@ -212,6 +213,10 @@ router.get('/users', verifyToken, verifyAdmin, async (req, res, next) => {
     if (role) {
       params.push(role);
       conditions.push(`role = $${params.length}`);
+    }
+    if (plan) {
+      params.push(plan);
+      conditions.push(`current_plan = $${params.length}`);
     }
     if (search) {
       params.push(`%${search}%`);

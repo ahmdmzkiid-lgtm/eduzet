@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import * as XLSX from 'xlsx';
 import ImageUpload from '../../components/ImageUpload';
-import { ujianMandiriService, soalService } from '../../services/api';
+import { ujianMandiriService } from '../../services/api';
 import { STATUS_OPTIONS, getStatusConfig } from '../../data/ujianMandiriData';
 import MathText from '../../components/MathText';
 import ZoomableImage from '../../components/ui/ZoomableImage';

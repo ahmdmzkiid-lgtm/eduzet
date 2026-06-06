@@ -43,6 +43,8 @@ const UserManagement = () => {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'student' | 'admin'
+  const [planFilter, setPlanFilter] = useState('all'); // 'all' | 'sultan' | 'premium' | 'gratis'
+  const [showFilters, setShowFilters] = useState(false);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [detailUser, setDetailUser] = useState(null);
@@ -55,6 +57,7 @@ const UserManagement = () => {
     try {
       const params = { page, limit: 10 };
       if (activeTab !== 'all') params.role = activeTab;
+      if (planFilter !== 'all') params.plan = planFilter;
       if (search) params.search = search;
       const res = await adminService.getUsers(params);
       setUsers(res.data.data.users);
@@ -65,7 +68,7 @@ const UserManagement = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTab, search]);
+  }, [activeTab, planFilter, search]);
 
   useEffect(() => {
     fetchUsers(1);
@@ -204,25 +207,80 @@ const UserManagement = () => {
 
         {/* Search + Actions */}
         <div className="flex items-center gap-3 w-full md:w-auto">
-          <form onSubmit={handleSearch} className="flex items-center gap-2">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
-              <input
-                type="text"
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Cari pengguna..."
-                className="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-xl text-label-md outline-none focus:ring-2 focus:ring-primary w-48"
-              />
-            </div>
+          <form onSubmit={handleSearch} className="relative">
+            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px]">search</span>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={e => setSearchInput(e.target.value)}
+              placeholder="Cari pengguna..."
+              className="pl-10 pr-4 py-2 bg-surface-container-low border border-outline-variant rounded-xl text-label-md outline-none focus:ring-2 focus:ring-primary w-48"
+            />
+          </form>
+
+          {/* Filters Dropdown */}
+          <div className="relative">
             <button
-              type="submit"
-              className="flex items-center gap-2 px-5 py-2 bg-surface-container-low border border-outline-variant rounded-xl text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-high transition-colors"
+              type="button"
+              onClick={() => setShowFilters(!showFilters)}
+              className={`flex items-center gap-2 px-5 py-2 border rounded-xl font-label-md text-label-md transition-all ${
+                planFilter !== 'all'
+                  ? 'bg-primary/10 border-primary text-primary font-bold shadow-sm'
+                  : 'bg-surface-container-low border-outline-variant text-on-surface-variant hover:bg-surface-container-high'
+              }`}
             >
               <span className="material-symbols-outlined text-[20px]">filter_list</span>
               Filters
+              {planFilter !== 'all' && (
+                <span className="ml-1 px-2 py-0.5 text-[10px] bg-primary text-on-primary rounded-full font-bold leading-none">
+                  1
+                </span>
+              )}
             </button>
-          </form>
+            {showFilters && (
+              <>
+                {/* Backdrop to close dropdown on click outside */}
+                <div className="fixed inset-0 z-40" onClick={() => setShowFilters(false)} />
+                
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-outline-variant shadow-lg p-4 z-50 animate-fade-in text-left">
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="font-bold text-label-md text-on-surface">Filter Pengguna</p>
+                    {planFilter !== 'all' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPlanFilter('all');
+                          setShowFilters(false);
+                        }}
+                        className="text-primary text-[12px] font-bold hover:underline"
+                      >
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">Paket Subscription</label>
+                      <select
+                        value={planFilter}
+                        onChange={e => {
+                          setPlanFilter(e.target.value);
+                          setShowFilters(false);
+                        }}
+                        className="w-full bg-surface-container-low border border-outline-variant rounded-xl px-3 py-2 text-label-md text-on-surface outline-none focus:ring-2 focus:ring-primary transition-all cursor-pointer"
+                      >
+                        <option value="all">Semua Paket</option>
+                        <option value="sultan">Sultan</option>
+                        <option value="premium">Premium</option>
+                        <option value="gratis">Gratis</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
           <button className="flex items-center gap-2 px-6 py-2 bg-primary text-on-primary rounded-xl font-label-md text-label-md hover:shadow-md active:scale-95 transition-all">
             <span className="material-symbols-outlined text-[20px]">add</span>
             Invite User

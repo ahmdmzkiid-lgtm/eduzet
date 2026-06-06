@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNotifications } from '../hooks/useNotifications';
 
 export default function NotificationModal() {

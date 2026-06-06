@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { tryoutService, soalService } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
  * - Submit all answers dalam satu request
  * - Clear loading state
  */
-export const useTryoutFetch = (tryoutPackageId) => {
+export const useTryoutFetch = () => {
   // ===== STATE MANAGEMENT =====
   const [allQuestions, setAllQuestions] = useState([]); // Semua 160 soal
   const [loading, setLoading] = useState(false);

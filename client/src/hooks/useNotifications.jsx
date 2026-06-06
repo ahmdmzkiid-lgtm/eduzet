@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { notificationService } from '../services/api';
 import { useAuth } from './useAuth';
-import toast from 'react-hot-toast';
 
 const NotificationContext = createContext();
 

@@ -911,7 +911,6 @@ router.post('/result/combined', verifyToken, async (req, res, next) => {
     }
 
     // Get package info from first session or from package_id
-    const pkgId = package_id || sessionsRes.rows[0].package_id;
     const pkgTitle = sessionsRes.rows[0].title || 'Tryout';
 
     // Parse subject_config

@@ -4,7 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './hooks/useNotifications';
 import NotificationModal from './components/NotificationModal';
-import { ProtectedRoute, AdminRoute, PublicRoute, StudentRoute, StudentRouteWrapped } from './components/layout/ProtectedRoute';
+import { AdminRoute, PublicRoute, StudentRoute, StudentRouteWrapped } from './components/layout/ProtectedRoute';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -16,13 +16,11 @@ import PusatTryout from './pages/tryout/PusatTryout';
 import TryoutSession from './pages/TryoutSession';
 import TryoutSessionNew from './pages/TryoutSessionNew';
 import TryoutSubtesSelect from './pages/tryout/TryoutSubtesSelect';
-import HasilTryout from './pages/HasilTryout';
 import Bookmark from './pages/Bookmark';
 import Riwayat from './pages/Riwayat';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import InputSoal from './pages/admin/InputSoal';
 import ImportCSV from './pages/admin/ImportCSV';
-// GenerateAI removed
 import UserManagement from './pages/admin/UserManagement';
 import ManageTeam from './pages/admin/ManageTeam';
 import AdminSettings from './pages/admin/AdminSettings';

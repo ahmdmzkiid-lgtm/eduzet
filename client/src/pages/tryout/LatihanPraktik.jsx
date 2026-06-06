@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { soalService, subjectService, activityService, socialService } from '../../services/api';
+import { soalService, subjectService, activityService } from '../../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../hooks/useAuth';
 import QuestionGrid from '../../components/tryout/QuestionGrid';
