@@ -579,45 +579,71 @@ const TryoutResult = () => {
                     <MathText className="text-[15px] font-semibold text-[#191b24] mb-4 leading-relaxed" text={question.content || ''} />
 
                     {/* Answer Choices */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-4">
-                      {(question.choices || []).map((choice) => {
-                        const isChosen = choice.label === question.userAnswer;
-                        const isCorrectChoice = choice.is_correct === true;
-
-                        let cardClass = 'p-3 rounded-xl border bg-white border-[#c2c6d8]/50';
-                        let contentClass = 'text-[13px] text-[#424656]';
-                        let icon = null;
-
-                        if (isCorrectChoice) {
-                          cardClass = 'p-3 rounded-xl border-2 border-[#0050cb] bg-[#dae1ff]/5';
-                          contentClass = 'text-[13px] font-bold text-[#191b24]';
-                          icon = <span className="material-symbols-outlined text-[18px] text-[#0050cb]">check</span>;
-                        }
-
-                        if (isChosen && !isCorrectChoice) {
-                          cardClass = 'p-3 rounded-xl border-2 border-[#ba1a1a] bg-[#ffdad6]/10';
-                          contentClass = 'text-[13px] font-bold text-[#191b24]';
-                          icon = <span className="material-symbols-outlined text-[18px] text-[#ba1a1a]">close</span>;
-                        }
-
-                        return (
-                          <div key={choice.id || choice.label} className={cardClass}>
-                            <div className="flex justify-between items-center">
-                              <div className={`${contentClass} flex items-start gap-1.5`}>
-                                <span className="font-bold shrink-0">{choice.label}.</span>
-                                <MathText text={choice.content || ''} />
-                              </div>
-                              {icon && <span>{icon}</span>}
-                            </div>
-                            {isChosen && !isCorrectChoice && (
-                              <p className="text-[12px] text-[#ba1a1a] mt-1 font-semibold">Pilihan kamu</p>
-                            )}
-                            {isCorrectChoice && !isChosen && (
-                              <p className="text-[12px] text-[#0050cb] mt-1 font-semibold">Jawaban benar</p>
-                            )}
+                    <div className="mb-4">
+                      {question.question_type === 'short_answer' ? (
+                        <div className="space-y-2">
+                          <div className={`relative flex items-center p-3 rounded-xl border-2 ${
+                            question.isCorrect
+                              ? 'border-[#0050cb] bg-[#dae1ff]/5'
+                              : 'border-2 border-[#ba1a1a] bg-[#ffdad6]/10'
+                          }`}>
+                            <span className="text-[13px] font-bold text-gray-700 mr-2">Jawabanmu:</span>
+                            <span className="text-[13px] text-gray-900 font-medium flex-1">{question.userAnswer || '(Tidak dijawab)'}</span>
+                            <span className="flex-shrink-0 ml-2">
+                              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1", color: question.isCorrect ? '#0050cb' : '#ba1a1a' }}>
+                                {question.isCorrect ? 'check' : 'close'}
+                              </span>
+                            </span>
                           </div>
-                        );
-                      })}
+                          {!question.isCorrect && question.correctAnswer && (
+                            <div className="relative flex items-center p-3 rounded-xl border border-[#0050cb] bg-[#dae1ff]/5">
+                              <span className="text-[13px] font-bold text-[#0050cb] mr-2">Jawaban Benar:</span>
+                              <span className="text-[13px] text-[#0050cb] font-medium">{question.correctAnswer}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {(question.choices || []).map((choice) => {
+                            const isChosen = choice.label === question.userAnswer;
+                            const isCorrectChoice = choice.is_correct === true;
+
+                            let cardClass = 'p-3 rounded-xl border bg-white border-[#c2c6d8]/50';
+                            let contentClass = 'text-[13px] text-[#424656]';
+                            let icon = null;
+
+                            if (isCorrectChoice) {
+                              cardClass = 'p-3 rounded-xl border-2 border-[#0050cb] bg-[#dae1ff]/5';
+                              contentClass = 'text-[13px] font-bold text-[#191b24]';
+                              icon = <span className="material-symbols-outlined text-[18px] text-[#0050cb]">check</span>;
+                            }
+
+                            if (isChosen && !isCorrectChoice) {
+                              cardClass = 'p-3 rounded-xl border-2 border-[#ba1a1a] bg-[#ffdad6]/10';
+                              contentClass = 'text-[13px] font-bold text-[#191b24]';
+                              icon = <span className="material-symbols-outlined text-[18px] text-[#ba1a1a]">close</span>;
+                            }
+
+                            return (
+                              <div key={choice.id || choice.label} className={cardClass}>
+                                <div className="flex justify-between items-center">
+                                  <div className={`${contentClass} flex items-start gap-1.5`}>
+                                    <span className="font-bold shrink-0">{choice.label}.</span>
+                                    <MathText text={choice.content || ''} />
+                                  </div>
+                                  {icon && <span>{icon}</span>}
+                                </div>
+                                {isChosen && !isCorrectChoice && (
+                                  <p className="text-[12px] text-[#ba1a1a] mt-1 font-semibold">Pilihan kamu</p>
+                                )}
+                                {isCorrectChoice && !isChosen && (
+                                  <p className="text-[12px] text-[#0050cb] mt-1 font-semibold">Jawaban benar</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Explanation from Admin */}

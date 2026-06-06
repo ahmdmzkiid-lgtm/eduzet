@@ -244,43 +244,64 @@ const TryoutSessionNew = () => {
                       />
                     )}
 
-                    {/* ANSWER CHOICES */}
+                    {/* ANSWER CHOICES OR INPUT */}
                     <div className="space-y-3">
-                      {question.choices?.map((choice) => {
-                        const isSelected = userAnswer?.choiceId === choice.id;
+                      {question.question_type === 'short_answer' ? (
+                        /* Short Answer Input */
+                        <div className="bg-gray-50 rounded-lg p-4 border-2 border-gray-200 focus-within:border-indigo-600 focus-within:ring-2 focus-within:ring-indigo-600/20 transition-all">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[13px] font-semibold text-gray-500">Tulis jawaban singkat di bawah ini:</span>
+                          </div>
+                          <input
+                            type="text"
+                            className="w-full px-4 py-2.5 rounded-lg border border-gray-300 outline-none text-[15px] text-gray-900 placeholder:text-gray-400 bg-white"
+                            placeholder="Ketik jawaban Anda..."
+                            value={userAnswer?.answerText || ''}
+                            onChange={(e) => {
+                              saveAnswer(question.id, undefined, {
+                                sessionId,
+                                answerText: e.target.value,
+                              });
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        question.choices?.map((choice) => {
+                          const isSelected = userAnswer?.choiceId === choice.id;
 
-                        return (
-                          <label
-                            key={choice.id}
-                            className={`
-                              flex items-start gap-3 p-3 rounded-lg cursor-pointer
-                              transition-all border-2
-                              ${
-                                isSelected
-                                  ? 'border-indigo-600 bg-indigo-50'
-                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
-                              }
-                            `}
-                          >
-                            <input
-                              type="radio"
-                              name={`question_${question.id}`}
-                              value={choice.id}
-                              checked={isSelected}
-                              onChange={() => {
-                                saveAnswer(question.id, choice.id, {
-                                  sessionId,
-                                });
-                              }}
-                              className="mt-1 cursor-pointer"
-                            />
-                            <span className="flex-1 flex items-start gap-1.5">
-                              <strong className="text-lg">{choice.label}.</strong>
-                              <MathText text={choice.content || ''} />
-                            </span>
-                          </label>
-                        );
-                      })}
+                          return (
+                            <label
+                              key={choice.id}
+                              className={`
+                                flex items-start gap-3 p-3 rounded-lg cursor-pointer
+                                transition-all border-2
+                                ${
+                                  isSelected
+                                    ? 'border-indigo-600 bg-indigo-50'
+                                    : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                                }
+                              `}
+                            >
+                              <input
+                                type="radio"
+                                name={`question_${question.id}`}
+                                value={choice.id}
+                                checked={isSelected}
+                                onChange={() => {
+                                  saveAnswer(question.id, choice.id, {
+                                    sessionId,
+                                  });
+                                }}
+                                className="mt-1 cursor-pointer"
+                              />
+                              <span className="flex-1 flex items-start gap-1.5">
+                                <strong className="text-lg">{choice.label}.</strong>
+                                <MathText text={choice.content || ''} />
+                              </span>
+                            </label>
+                          );
+                        })
+                      )}
                     </div>
 
                     {/* EXPLANATION - Collapsible */}

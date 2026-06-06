@@ -88,7 +88,7 @@ router.get('/', verifyToken, async (req, res, next) => {
       }
     }
 
-    let query = 'SELECT * FROM questions WHERE 1=1';
+    let query = 'SELECT id, subject_id, topic_id, content, image_url, image_position, difficulty, source, display_order, tryout_package_id, question_type, created_at FROM questions WHERE 1=1';
     const values = [];
 
     if (subject_id) {
@@ -171,7 +171,8 @@ router.post('/', verifyToken, verifyAdmin, async (req, res, next) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    const { subject_id, content, difficulty, choices, image_url, image_position } = req.body;
+    const { subject_id, content, difficulty, choices, image_url, image_position, question_type, correct_answer_text } = req.body;
+    const qType = question_type || 'multiple_choice';
     
     // Get max display_order for this subject
     const maxOrderRes = await client.query(
@@ -181,18 +182,28 @@ router.post('/', verifyToken, verifyAdmin, async (req, res, next) => {
     const nextDisplayOrder = (maxOrderRes.rows[0]?.max_order || 0) + 1;
     
     const qRes = await client.query(
-      'INSERT INTO questions (subject_id, content, difficulty, display_order, image_url, image_position) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-      [subject_id, content, difficulty || 'medium', nextDisplayOrder, image_url || null, image_position || 'after']
+      'INSERT INTO questions (subject_id, content, difficulty, display_order, image_url, image_position, question_type) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      [subject_id, content, difficulty || 'medium', nextDisplayOrder, image_url || null, image_position || 'after', qType]
     );
     const question = qRes.rows[0];
     
-    const choicePromises = choices.map(c => 
-      client.query(
+    if (qType === 'short_answer') {
+      // For short answer: store correct answer as single choice with label 'A'
+      const answerText = correct_answer_text || '';
+      const explanation = choices?.[0]?.explanation || null;
+      await client.query(
         'INSERT INTO answer_choices (question_id, label, content, is_correct, explanation) VALUES ($1, $2, $3, $4, $5)',
-        [question.id, c.label, c.content, c.is_correct, c.explanation]
-      )
-    );
-    await Promise.all(choicePromises);
+        [question.id, 'A', answerText, true, explanation]
+      );
+    } else {
+      const choicePromises = choices.map(c => 
+        client.query(
+          'INSERT INTO answer_choices (question_id, label, content, is_correct, explanation) VALUES ($1, $2, $3, $4, $5)',
+          [question.id, c.label, c.content, c.is_correct, c.explanation]
+        )
+      );
+      await Promise.all(choicePromises);
+    }
     await client.query('COMMIT');
     
     res.status(201).json({ success: true, data: question, message: 'Question created' });

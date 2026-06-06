@@ -177,7 +177,8 @@ export const useTryoutFetch = () => {
         const updated = {
           ...prev,
           [questionId]: {
-            choiceId,
+            choiceId: choiceId !== undefined ? choiceId : prev[questionId]?.choiceId,
+            answerText: metadata.answerText !== undefined ? metadata.answerText : prev[questionId]?.answerText,
             flagged: prev[questionId]?.flagged || false,
             timeSpent: prev[questionId]?.timeSpent || 0,
             answeredAt: new Date().toISOString(),
@@ -236,16 +237,16 @@ export const useTryoutFetch = () => {
    */
   const getAnswerStats = useCallback(() => {
     const stats = {
-      totalAnswered: Object.keys(userAnswers).filter((qId) => userAnswers[qId]?.choiceId).length,
+      totalAnswered: Object.keys(userAnswers).filter((qId) => userAnswers[qId]?.choiceId || userAnswers[qId]?.answerText).length,
       totalFlagged: Object.keys(userAnswers).filter((qId) => userAnswers[qId]?.flagged).length,
-      totalUnanswered: metadata.totalQuestions - Object.keys(userAnswers).filter((qId) => userAnswers[qId]?.choiceId).length,
+      totalUnanswered: metadata.totalQuestions - Object.keys(userAnswers).filter((qId) => userAnswers[qId]?.choiceId || userAnswers[qId]?.answerText).length,
       answersByCategory: {},
     };
 
     // Stats per category
     metadata.totalCategories.forEach((cat) => {
       const catQuestions = getQuestionsByCategory(cat);
-      const catAnswered = catQuestions.filter((q) => userAnswers[q.id]?.choiceId).length;
+      const catAnswered = catQuestions.filter((q) => userAnswers[q.id]?.choiceId || userAnswers[q.id]?.answerText).length;
       stats.answersByCategory[cat] = {
         answered: catAnswered,
         total: catQuestions.length,
@@ -271,6 +272,7 @@ export const useTryoutFetch = () => {
         const answersPayload = Object.entries(userAnswers).map(([questionId, answer]) => ({
           questionId,
           choiceId: answer.choiceId || null,
+          answerText: answer.answerText || null,
           flagged: answer.flagged || false,
           timeSpent: answer.timeSpent || 0,
         }));

@@ -17,11 +17,19 @@ router.post('/latihan/submit', verifyToken, async (req, res, next) => {
     // Build IRT answer objects from client data
     const irtAnswers = questions.map((q, idx) => {
       const chosenId = answers[idx] || answers[String(idx)] || null;
-      const chosenChoice = chosenId ? (q.choices || []).find(c => c.id === chosenId) : null;
-      const isCorrect = chosenChoice?.is_correct === true;
+      let isCorrect = false;
+      let chosenChoice = null;
+
+      if (q.question_type === 'short_answer') {
+        const correctChoice = (q.choices || []).find(c => c.is_correct);
+        isCorrect = !!(correctChoice && chosenId && correctChoice.content.trim().toLowerCase() === String(chosenId).trim().toLowerCase());
+      } else {
+        chosenChoice = chosenId ? (q.choices || []).find(c => c.id === chosenId) : null;
+        isCorrect = chosenChoice?.is_correct === true;
+      }
 
       return {
-        chosen_choice_id: chosenId,
+        chosen_choice_id: q.question_type === 'short_answer' ? null : chosenId,
         is_correct: isCorrect,
         question_id: q.id,
         difficulty: q.difficulty || 'medium',

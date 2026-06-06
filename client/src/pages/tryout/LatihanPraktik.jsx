@@ -415,26 +415,43 @@ const LatihanPraktik = () => {
 
         {/* Answer Options */}
         <div className="flex flex-col gap-3 mb-6">
-          {(currentQuestion.choices || []).map((choice) => (
-            <button
-              key={choice.id}
-              onClick={() => handleOptionSelect(choice.id)}
-              className={`group flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
-                answers[currentIndex] === choice.id
-                ? 'bg-[#e8eeff] border-[#0050cb] shadow-sm shadow-[#0050cb]/10'
-                : 'bg-white border-[#e0e2f0] hover:border-[#a8b4d9] hover:shadow-sm'
-              }`}
-            >
-              <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-[14px] font-bold shrink-0 transition-all ${
-                answers[currentIndex] === choice.id
-                ? 'bg-[#0050cb] text-white shadow-sm shadow-[#0050cb]/20'
-                : 'bg-[#ecedfa] text-[#424656] group-hover:bg-[#dae1ff]'
-              }`}>
-                {choice.label}
-              </span>
-              <MathText className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
-            </button>
-          ))}
+          {currentQuestion?.question_type === 'short_answer' ? (
+            /* Short Answer Input */
+            <div className="bg-white rounded-2xl p-5 border border-[#e0e2f0] shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-[20px] text-[#0050cb]">edit_note</span>
+                <span className="text-[13px] font-semibold text-[#727687]">Ketik jawaban Anda</span>
+              </div>
+              <input
+                type="text"
+                className="w-full px-4 py-3 rounded-xl border border-[#c2c6d8] focus:border-[#0050cb] focus:ring-2 focus:ring-[#0050cb]/20 outline-none text-[15px] text-[#191b24] placeholder:text-[#c2c6d8] transition-all bg-white"
+                placeholder="Tulis jawaban singkat di sini..."
+                value={answers[currentIndex] || ''}
+                onChange={(e) => handleOptionSelect(e.target.value)}
+              />
+            </div>
+          ) : (
+            (currentQuestion?.choices || []).map((choice) => (
+              <button
+                key={choice.id}
+                onClick={() => handleOptionSelect(choice.id)}
+                className={`group flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
+                  answers[currentIndex] === choice.id
+                  ? 'bg-[#e8eeff] border-[#0050cb] shadow-sm shadow-[#0050cb]/10'
+                  : 'bg-white border-[#e0e2f0] hover:border-[#a8b4d9] hover:shadow-sm'
+                }`}
+              >
+                <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-[14px] font-bold shrink-0 transition-all ${
+                  answers[currentIndex] === choice.id
+                  ? 'bg-[#0050cb] text-white shadow-sm shadow-[#0050cb]/20'
+                  : 'bg-[#ecedfa] text-[#424656] group-hover:bg-[#dae1ff]'
+                }`}>
+                  {choice.label}
+                </span>
+                <MathText className={`text-[14px] leading-relaxed ${answers[currentIndex] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
+              </button>
+            ))
+          )}
         </div>
 
         {/* Navigation */}

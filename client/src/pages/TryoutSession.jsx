@@ -114,9 +114,11 @@ const TryoutSession = () => {
       currentSubjectsData.forEach((subject, subjectIdx) => {
         (subject.questions || []).forEach((q, qIdx) => {
           const key = `${subjectIdx}:${qIdx}`;
+          const choiceId = currentAnswers[key];
           answerPayload.push({
             question_id: q.id,
-            chosen_choice_id: currentAnswers[key] || null,
+            chosen_choice_id: choiceId === '__short_answer__' ? null : (choiceId || null),
+            answer_text: currentAnswers[`${key}_text`] || null,
             is_flagged: currentFlagged[key] || false,
             time_spent_sec: 0,
           });
@@ -462,7 +464,36 @@ const TryoutSession = () => {
 
         {/* Answer Options */}
         <div className="flex flex-col gap-3 mb-6">
-          {(currentQuestion?.choices || []).map((choice) => (
+          {currentQuestion?.question_type === 'short_answer' ? (
+            /* Short Answer Input */
+            <div className="bg-white rounded-2xl p-5 border-2 border-[#e0e2f0]">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="material-symbols-outlined text-[20px] text-[#0050cb]">edit_note</span>
+                <span className="text-[13px] font-semibold text-[#727687]">Ketik jawaban Anda</span>
+              </div>
+              <input
+                type="text"
+                className="w-full px-4 py-3 rounded-xl border-2 border-[#e0e2f0] focus:border-[#0050cb] focus:ring-2 focus:ring-[#0050cb]/20 outline-none text-[15px] text-[#191b24] placeholder:text-[#c2c6d8] transition-all"
+                placeholder="Tulis jawaban singkat di sini..."
+                value={answers[`${globalKey}_text`] || ''}
+                onChange={(e) => {
+                  const text = e.target.value;
+                  setAnswers(prev => {
+                    const next = { ...prev, [`${globalKey}_text`]: text };
+                    // Also set a truthy value for the main key so it counts as answered
+                    if (text.trim()) {
+                      next[globalKey] = '__short_answer__';
+                    } else {
+                      delete next[globalKey];
+                    }
+                    try { localStorage.setItem(LS_ANSWERS, JSON.stringify(next)); } catch {}
+                    return next;
+                  });
+                }}
+              />
+            </div>
+          ) : (
+            (currentQuestion?.choices || []).map((choice) => (
             <button
               key={choice.id}
               onClick={() => handleAnswerSelect(choice.id)}
@@ -481,7 +512,8 @@ const TryoutSession = () => {
               </span>
               <MathText className={`text-[14px] leading-relaxed ${answers[globalKey] === choice.id ? 'font-medium text-[#191b24]' : 'text-[#424656]'}`} text={choice.content || ''} />
             </button>
-          ))}
+            ))
+          )}
         </div>
 
         {/* Navigation */}

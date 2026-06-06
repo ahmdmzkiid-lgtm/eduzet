@@ -119,51 +119,78 @@ router.post('/excel', verifyToken, verifyAdmin, upload.single('file'), async (re
         rejectedCount++;
         continue;
       }
-      if (!opsiA || !opsiB) {
-        errors.push(`Baris ${rowNum}: Minimal OPSI A dan OPSI B harus diisi`);
-        rejectedCount++;
-        continue;
-      }
-      if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) {
-        errors.push(`Baris ${rowNum}: KUNCI JAWABAN '${kunci}' tidak valid (harus A/B/C/D/E)`);
-        rejectedCount++;
-        continue;
+
+      // Detect question type: if ALL options are empty → short_answer
+      const isShortAnswer = !opsiA && !opsiB && !opsiC && !opsiD && !opsiE;
+
+      if (isShortAnswer) {
+        // Short answer: KUNCI JAWABAN contains the correct text answer
+        if (!kunci && !resolve(row, 'kunci')) {
+          errors.push(`Baris ${rowNum}: Soal isian singkat harus memiliki KUNCI JAWABAN`);
+          rejectedCount++;
+          continue;
+        }
+      } else {
+        // Multiple choice validation
+        if (!opsiA || !opsiB) {
+          errors.push(`Baris ${rowNum}: Minimal OPSI A dan OPSI B harus diisi`);
+          rejectedCount++;
+          continue;
+        }
+        if (!['A', 'B', 'C', 'D', 'E'].includes(kunci)) {
+          errors.push(`Baris ${rowNum}: KUNCI JAWABAN '${kunci}' tidak valid (harus A/B/C/D/E)`);
+          rejectedCount++;
+          continue;
+        }
       }
       // PEMBAHASAN opsional — tidak wajib diisi
 
-      // Build choices — skip empty options
-      const choices = [
-        { label: 'A', content: opsiA },
-        { label: 'B', content: opsiB },
-        { label: 'C', content: opsiC },
-        { label: 'D', content: opsiD },
-        { label: 'E', content: opsiE },
-      ].filter(c => c.content !== '');
+      const questionType = isShortAnswer ? 'short_answer' : 'multiple_choice';
 
-      const correctExists = choices.some(c => c.label === kunci);
-      if (!correctExists) {
-        errors.push(`Baris ${rowNum}: KUNCI '${kunci}' tidak ada di opsi yang tersedia`);
-        rejectedCount++;
-        continue;
+      if (!isShortAnswer) {
+        // Build choices — skip empty options (multiple choice)
+        var choices = [
+          { label: 'A', content: opsiA },
+          { label: 'B', content: opsiB },
+          { label: 'C', content: opsiC },
+          { label: 'D', content: opsiD },
+          { label: 'E', content: opsiE },
+        ].filter(c => c.content !== '');
+
+        const correctExists = choices.some(c => c.label === kunci);
+        if (!correctExists) {
+          errors.push(`Baris ${rowNum}: KUNCI '${kunci}' tidak ada di opsi yang tersedia`);
+          rejectedCount++;
+          continue;
+        }
       }
 
       // ── Insert question ──────────────────────────────────────────
       const pkgId = destination === 'tryout' ? tryout_package_id : null;
       const qSource = destination === 'battle' ? 'battle' : 'manual';
       const qRes = await client.query(
-        'INSERT INTO questions (subject_id, topic_id, content, difficulty, tryout_package_id, display_order, source, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-        [subject_id, topic_id || null, soal, difficulty, pkgId, nextDisplayOrder, qSource, imageUrl || null]
+        'INSERT INTO questions (subject_id, topic_id, content, difficulty, tryout_package_id, display_order, source, image_url, question_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id',
+        [subject_id, topic_id || null, soal, difficulty, pkgId, nextDisplayOrder, qSource, imageUrl || null, questionType]
       );
       const questionId = qRes.rows[0].id;
       nextDisplayOrder++;
 
       // ── Insert choices ───────────────────────────────────────────
-      for (const choice of choices) {
-        const isCorrect = choice.label === kunci;
+      if (isShortAnswer) {
+        // For short answer: store correct answer as a single choice with label 'A'
+        const correctAnswerText = resolve(row, 'kunci') || kunci;
         await client.query(
           'INSERT INTO answer_choices (question_id, label, content, is_correct, explanation) VALUES ($1, $2, $3, $4, $5)',
-          [questionId, choice.label, choice.content, isCorrect, isCorrect ? (pembahasan || null) : null]
+          [questionId, 'A', correctAnswerText, true, pembahasan || null]
         );
+      } else {
+        for (const choice of choices) {
+          const isCorrect = choice.label === kunci;
+          await client.query(
+            'INSERT INTO answer_choices (question_id, label, content, is_correct, explanation) VALUES ($1, $2, $3, $4, $5)',
+            [questionId, choice.label, choice.content, isCorrect, isCorrect ? (pembahasan || null) : null]
+          );
+        }
       }
 
       importedCount++;

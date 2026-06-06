@@ -96,12 +96,31 @@ router.patch('/packages/:id', [verifyToken, verifyAdmin], async (req, res, next)
 // Delete package
 router.delete('/packages/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
   const { id } = req.params;
+  const client = await pool.connect();
   try {
-    const result = await pool.query('DELETE FROM tryout_packages WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Package not found' });
-    res.json({ success: true, message: 'Package deleted' });
+    await client.query('BEGIN');
+    
+    // 1. Delete registrations referencing this package (avoids check constraint violation on package_type checks)
+    await client.query('DELETE FROM tryout_registrations WHERE utbk_package_id = $1', [id]);
+
+    // 2. Delete tryout sessions referencing this package (cascades to user_answers)
+    await client.query('DELETE FROM tryout_sessions WHERE package_id = $1', [id]);
+
+    // 3. Delete the package itself
+    const result = await client.query('DELETE FROM tryout_packages WHERE id = $1 RETURNING *', [id]);
+    
+    if (result.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Package not found' });
+    }
+
+    await client.query('COMMIT');
+    res.json({ success: true, message: 'Package deleted successfully' });
   } catch (error) {
+    await client.query('ROLLBACK');
     next(error);
+  } finally {
+    client.release();
   }
 });
 
@@ -424,7 +443,7 @@ router.get('/session/:sessionId/questions', verifyToken, async (req, res, next) 
 
     // Get all questions for this session, ordered by position to preserve question order
     const result = await pool.query(`
-      SELECT q.id, q.content, q.image_url, q.difficulty,
+      SELECT q.id, q.content, q.image_url, q.difficulty, q.question_type,
              s.name as subject_name, s.id as subject_id, ua.position
       FROM user_answers ua
       JOIN questions q ON ua.question_id = q.id
@@ -494,14 +513,15 @@ router.get('/session/:sessionId/questions', verifyToken, async (req, res, next) 
 // Save Answer
 router.post('/answer', verifyToken, async (req, res, next) => {
   try {
-    const { session_id, question_id, chosen_choice_id, is_flagged, time_spent_sec } = req.body;
+    const { session_id, question_id, chosen_choice_id, is_flagged, time_spent_sec, answer_text } = req.body;
     await pool.query(
       `UPDATE user_answers 
        SET chosen_choice_id = COALESCE($1, chosen_choice_id), 
            is_flagged = COALESCE($2, is_flagged), 
-           time_spent_sec = time_spent_sec + COALESCE($3, 0)
+           time_spent_sec = time_spent_sec + COALESCE($3, 0),
+           answer_text = COALESCE($6, answer_text)
        WHERE session_id = $4 AND question_id = $5`,
-      [chosen_choice_id, is_flagged, time_spent_sec, session_id, question_id]
+      [chosen_choice_id, is_flagged, time_spent_sec, session_id, question_id, answer_text || null]
     );
     res.json({ success: true, message: 'Answer saved' });
   } catch (error) {
@@ -519,15 +539,16 @@ router.post('/answer-batch', verifyToken, async (req, res, next) => {
   try {
     await client.query('BEGIN');
     for (const ans of answers) {
-      const { question_id, chosen_choice_id, is_flagged, time_spent_sec } = ans;
+      const { question_id, chosen_choice_id, is_flagged, time_spent_sec, answer_text } = ans;
       if (!question_id) continue;
       await client.query(
         `UPDATE user_answers
          SET chosen_choice_id = COALESCE($1, chosen_choice_id),
              is_flagged = COALESCE($2, is_flagged),
-             time_spent_sec = time_spent_sec + COALESCE($3, 0)
+             time_spent_sec = time_spent_sec + COALESCE($3, 0),
+             answer_text = COALESCE($6, answer_text)
          WHERE session_id = $4 AND question_id = $5`,
-        [chosen_choice_id || null, is_flagged || false, time_spent_sec || 0, session_id, question_id]
+        [chosen_choice_id || null, is_flagged || false, time_spent_sec || 0, session_id, question_id, answer_text || null]
       );
     }
     await client.query('COMMIT');
@@ -622,8 +643,10 @@ router.get('/result/:sessionId', verifyToken, async (req, res, next) => {
           q.content,
           q.image_url,
           q.difficulty,
+          q.question_type,
           COALESCE(s.name, 'Unknown') as subject_name,
           ua.chosen_choice_id,
+          ua.answer_text,
           COALESCE(ua.is_flagged, false) as is_flagged,
           COALESCE(ua.time_spent_sec, 0) as time_spent_sec,
           (
@@ -652,13 +675,17 @@ router.get('/result/:sessionId', verifyToken, async (req, res, next) => {
           choices = [];
         }
 
+        const isShortAnswer = q.question_type === 'short_answer';
+
         // Find user's answer label
         let userAnswerLabel = null;
-        if (q.chosen_choice_id) {
+        if (!isShortAnswer && q.chosen_choice_id) {
           const chosenChoice = choices.find(c => c.id === q.chosen_choice_id);
           if (chosenChoice) {
             userAnswerLabel = chosenChoice.label;
           }
+        } else if (isShortAnswer) {
+          userAnswerLabel = q.answer_text || null;
         }
 
         // Find correct answer label and its explanation
@@ -666,8 +693,16 @@ router.get('/result/:sessionId', verifyToken, async (req, res, next) => {
         let questionExplanation = null;
         const correctChoice = choices.find(c => c.is_correct === true);
         if (correctChoice) {
-          correctAnswerLabel = correctChoice.label;
+          correctAnswerLabel = isShortAnswer ? correctChoice.content : correctChoice.label;
           questionExplanation = correctChoice.explanation;
+        }
+
+        // Evaluate correctness
+        let isCorrect = false;
+        if (isShortAnswer) {
+          isCorrect = !!(correctChoice && q.answer_text && correctChoice.content.trim().toLowerCase() === q.answer_text.trim().toLowerCase());
+        } else {
+          isCorrect = q.chosen_choice_id ? (choices.find(c => c.id === q.chosen_choice_id)?.is_correct === true) : false;
         }
 
         return {
@@ -676,8 +711,9 @@ router.get('/result/:sessionId', verifyToken, async (req, res, next) => {
           content: q.content,
           imageUrl: q.image_url,
           difficulty: q.difficulty,
+          question_type: q.question_type || 'multiple_choice',
           subject: q.subject_name,
-          isCorrect: q.chosen_choice_id ? (choices.find(c => c.id === q.chosen_choice_id)?.is_correct === true) : false,
+          isCorrect: isCorrect,
           isFlagged: q.is_flagged,
           userAnswer: userAnswerLabel,
           correctAnswer: correctAnswerLabel,
@@ -928,8 +964,10 @@ router.post('/result/combined', verifyToken, async (req, res, next) => {
         q.content,
         q.image_url,
         q.difficulty,
+        q.question_type,
         COALESCE(s.name, 'Unknown') as subject_name,
         ua.chosen_choice_id,
+        ua.answer_text,
         COALESCE(ua.is_flagged, false) as is_flagged,
         COALESCE(ua.time_spent_sec, 0) as time_spent_sec,
         ua.session_id,
@@ -956,18 +994,29 @@ router.post('/result/combined', verifyToken, async (req, res, next) => {
       let choices = q.choices;
       if (!Array.isArray(choices)) choices = [];
 
+      const isShortAnswer = q.question_type === 'short_answer';
+
       let userAnswerLabel = null;
-      if (q.chosen_choice_id) {
+      if (!isShortAnswer && q.chosen_choice_id) {
         const chosenChoice = choices.find(c => c.id === q.chosen_choice_id);
         if (chosenChoice) userAnswerLabel = chosenChoice.label;
+      } else if (isShortAnswer) {
+        userAnswerLabel = q.answer_text || null;
       }
 
       let correctAnswerLabel = null;
       let questionExplanation = null;
       const correctChoice = choices.find(c => c.is_correct === true);
       if (correctChoice) {
-        correctAnswerLabel = correctChoice.label;
+        correctAnswerLabel = isShortAnswer ? correctChoice.content : correctChoice.label;
         questionExplanation = correctChoice.explanation;
+      }
+
+      let isCorrect = false;
+      if (isShortAnswer) {
+        isCorrect = !!(correctChoice && q.answer_text && correctChoice.content.trim().toLowerCase() === q.answer_text.trim().toLowerCase());
+      } else {
+        isCorrect = q.chosen_choice_id ? (choices.find(c => c.id === q.chosen_choice_id)?.is_correct === true) : false;
       }
 
       return {
@@ -976,8 +1025,9 @@ router.post('/result/combined', verifyToken, async (req, res, next) => {
         content: q.content,
         imageUrl: q.image_url,
         difficulty: q.difficulty,
+        question_type: q.question_type || 'multiple_choice',
         subject: q.subject_name,
-        isCorrect: q.chosen_choice_id ? (choices.find(c => c.id === q.chosen_choice_id)?.is_correct === true) : false,
+        isCorrect: isCorrect,
         isFlagged: q.is_flagged,
         userAnswer: userAnswerLabel,
         correctAnswer: correctAnswerLabel,
@@ -1180,10 +1230,12 @@ router.post('/submit', verifyToken, async (req, res, next) => {
       answersRes = await pool.query(`
         SELECT
           ua.chosen_choice_id,
+          ua.answer_text,
           COALESCE(ac.is_correct, false) as is_correct,
           ua.question_id,
           COALESCE(ua.time_spent_sec, 0) as time_spent_sec,
           COALESCE(q.difficulty, 'medium') as difficulty,
+          COALESCE(q.question_type, 'multiple_choice') as question_type,
           COALESCE(s.name, 'Unknown') as subject_name
         FROM user_answers ua
         LEFT JOIN answer_choices ac ON ua.chosen_choice_id = ac.id
@@ -1195,6 +1247,19 @@ router.post('/submit', verifyToken, async (req, res, next) => {
     } catch (qError) {
       console.error('[SUBMIT] Error querying answers:', qError);
       return res.status(500).json({ success: false, error: 'Error fetching answers: ' + qError.message });
+    }
+
+    // For short answer questions, evaluate correctness by text comparison
+    for (const ans of answersRes.rows) {
+      if (ans.question_type === 'short_answer' && ans.answer_text) {
+        const correctRes = await pool.query(
+          `SELECT content FROM answer_choices WHERE question_id = $1 AND is_correct = true LIMIT 1`,
+          [ans.question_id]
+        );
+        if (correctRes.rows.length > 0) {
+          ans.is_correct = correctRes.rows[0].content.trim().toLowerCase() === ans.answer_text.trim().toLowerCase();
+        }
+      }
     }
 
     // Format answers for IRT scoring
@@ -1305,15 +1370,15 @@ router.post('/submit-bulk', verifyToken, async (req, res, next) => {
       // Delete existing answers if any
       await pool.query('DELETE FROM user_answers WHERE session_id = $1', [sessionId]);
 
-      // Prepare bulk insert
+      // Prepare bulk insert (with answer_text for short answer questions)
       const values = [];
       let paramIndex = 1;
-      let insertQuery = 'INSERT INTO user_answers (session_id, question_id, chosen_choice_id, time_spent_sec) VALUES ';
+      let insertQuery = 'INSERT INTO user_answers (session_id, question_id, chosen_choice_id, time_spent_sec, answer_text) VALUES ';
 
       const queryParts = answers.map((answer) => {
-        values.push(sessionId, answer.questionId, answer.choiceId, answer.timeSpent || 0);
-        const part = `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3})`;
-        paramIndex += 4;
+        values.push(sessionId, answer.questionId, answer.choiceId, answer.timeSpent || 0, answer.answerText || null);
+        const part = `($${paramIndex}, $${paramIndex + 1}, $${paramIndex + 2}, $${paramIndex + 3}, $${paramIndex + 4})`;
+        paramIndex += 5;
         return part;
       });
 
@@ -1336,10 +1401,12 @@ router.post('/submit-bulk', verifyToken, async (req, res, next) => {
       const answersRes = await pool.query(`
         SELECT
           ua.chosen_choice_id,
+          ua.answer_text,
           COALESCE(ac.is_correct, false) as is_correct,
           ua.question_id,
           COALESCE(ua.time_spent_sec, 0) as time_spent_sec,
           COALESCE(q.difficulty, 'medium') as difficulty,
+          COALESCE(q.question_type, 'multiple_choice') as question_type,
           COALESCE(s.name, 'Unknown') as subject_name
         FROM user_answers ua
         LEFT JOIN answer_choices ac ON ua.chosen_choice_id = ac.id
@@ -1347,6 +1414,19 @@ router.post('/submit-bulk', verifyToken, async (req, res, next) => {
         LEFT JOIN subjects s ON q.subject_id = s.id
         WHERE ua.session_id = $1
       `, [sessionId]);
+
+      // For short answer questions, evaluate correctness by text comparison
+      for (const ans of answersRes.rows) {
+        if (ans.question_type === 'short_answer' && ans.answer_text) {
+          const correctRes = await pool.query(
+            `SELECT content FROM answer_choices WHERE question_id = $1 AND is_correct = true LIMIT 1`,
+            [ans.question_id]
+          );
+          if (correctRes.rows.length > 0) {
+            ans.is_correct = correctRes.rows[0].content.trim().toLowerCase() === ans.answer_text.trim().toLowerCase();
+          }
+        }
+      }
 
       // Format for IRT scoring
       const formattedAnswers = answersRes.rows.map((ans) => ({

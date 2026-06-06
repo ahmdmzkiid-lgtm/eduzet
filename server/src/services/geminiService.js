@@ -36,7 +36,7 @@ FORMAT JAWABAN (WAJIB DIPATUHI):
 ATURAN KETAT:
 1. TOLAK pertanyaan di luar konteks Eduzet atau UTBK/SNBT
 2. JANGAN mengarang info (harga, fitur, janji yang tidak ada)
-3. Jika tidak tahu, sarankan email ke ahmadmuzaki.id@gmail.com
+3. Jika tidak tahu, sarankan email ke eduzetsupport@gmail.com
 4. JANGAN menjawab soal akademik, pembahasan materi, rekomendasi belajar, atau info PTN (itu bukan tugasmu sebagai CS)`;
 
     const chat = model.startChat({
@@ -186,7 +186,7 @@ FORMAT JAWABAN (WAJIB DIPATUHI):
 ATURAN KETAT:
 1. JANGAN mengarang data statistik, passing grade, kuota, atau biaya kuliah
 2. TOLAK pertanyaan di luar konteks UTBK/SNBT/PTN/belajar
-3. Jika tidak tahu, bilang jujur dan sarankan cek website resmi atau email ahmadmuzaki.id@gmail.com
+3. Jika tidak tahu, bilang jujur dan sarankan cek website resmi atau email eduzetsupport@gmail.com
 4. Selalu tanya dulu sebelum memberi saran panjang
 5. Beri semangat di akhir jawaban`;
 

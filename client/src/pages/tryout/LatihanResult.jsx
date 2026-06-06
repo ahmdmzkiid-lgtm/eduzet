@@ -49,9 +49,18 @@ const LatihanResult = () => {
   let correctCount = 0;
   const questionResults = questions.map((q, idx) => {
     const chosenId = answers[idx];
-    const chosenChoice = q.choices?.find(c => c.id === chosenId) || null;
+    const isShortAnswer = q.question_type === 'short_answer';
     const correctChoice = q.choices?.find(c => c.is_correct) || null;
-    const isCorrect = chosenChoice?.is_correct === true;
+    let isCorrect = false;
+    let chosenChoice = null;
+
+    if (isShortAnswer) {
+      isCorrect = !!(correctChoice && chosenId && correctChoice.content.trim().toLowerCase() === chosenId.trim().toLowerCase());
+    } else {
+      chosenChoice = q.choices?.find(c => c.id === chosenId) || null;
+      isCorrect = chosenChoice?.is_correct === true;
+    }
+
     if (isCorrect) correctCount++;
     return { ...q, idx, chosenId, chosenChoice, correctChoice, isCorrect, isAnswered: !!chosenId };
   });
@@ -289,47 +298,71 @@ const LatihanResult = () => {
 
                     {/* Answer Choices */}
                     <div className="space-y-2 mb-4">
-                      {(qr.choices || []).map((choice) => {
-                        const isChosen = choice.id === qr.chosenId;
-                        const isCorrectChoice = choice.is_correct;
-                        
-                        let borderClass = 'border border-[#c2c6d8]/50 bg-[#faf8ff]';
-                        let labelClass = 'border border-[#c2c6d8] text-[#424656]';
-                        let textClass = 'text-[#424656]';
-                        let icon = null;
-                        let tag = null;
-
-                        if (isCorrectChoice) {
-                          borderClass = 'border-2 border-[#006688] bg-[#c2e8ff]/20';
-                          labelClass = isChosen ? 'bg-[#006688] text-white' : 'border-2 border-[#006688] text-[#006688]';
-                          textClass = 'text-[#191b24] font-medium';
-                          icon = <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>;
-                          if (!isChosen) tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#006688] text-white text-[10px] rounded font-bold uppercase">Jawaban Benar</div>;
-                        }
-
-                        if (isChosen && !isCorrectChoice) {
-                          borderClass = 'border-2 border-[#ba1a1a] bg-[#ffdad6]/20';
-                          labelClass = 'bg-[#ba1a1a] text-white';
-                          textClass = 'text-[#191b24] font-medium';
-                          icon = <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>;
-                          tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#ba1a1a] text-white text-[10px] rounded font-bold uppercase">Jawabanmu</div>;
-                        }
-
-                        if (isChosen && isCorrectChoice) {
-                          tag = null; // no tag needed, the green border is enough
-                        }
-
-                        return (
-                          <div key={choice.id} className={`relative flex items-center p-3 rounded-xl ${borderClass}`}>
-                            {tag}
-                            <span className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 text-[12px] font-bold flex-shrink-0 ${labelClass}`}>
-                              {choice.label}
+                      {qr.question_type === 'short_answer' ? (
+                        <div className="space-y-2">
+                          <div className={`relative flex items-center p-3 rounded-xl border-2 ${
+                            qr.isCorrect
+                              ? 'border-[#006688] bg-[#c2e8ff]/20'
+                              : 'border-2 border-[#ba1a1a] bg-[#ffdad6]/20'
+                          }`}>
+                            <span className="text-[13px] font-bold text-gray-700 mr-2">Jawabanmu:</span>
+                            <span className="text-[13px] text-gray-900 font-medium flex-1">{qr.chosenId || '(Tidak dijawab)'}</span>
+                            <span className="flex-shrink-0 ml-2">
+                              <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1", color: qr.isCorrect ? '#006688' : '#ba1a1a' }}>
+                                {qr.isCorrect ? 'check_circle' : 'cancel'}
+                              </span>
                             </span>
-                            <MathText className={`text-[13px] flex-1 ${textClass}`} text={choice.content || ''} />
-                            {icon && <span className="flex-shrink-0 ml-2">{icon}</span>}
                           </div>
-                        );
-                      })}
+                          {!qr.isCorrect && qr.correctChoice && (
+                            <div className="relative flex items-center p-3 rounded-xl border border-[#006688] bg-[#c2e8ff]/10">
+                              <span className="text-[13px] font-bold text-[#006688] mr-2">Jawaban Benar:</span>
+                              <span className="text-[13px] text-[#006688] font-medium">{qr.correctChoice.content}</span>
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        (qr.choices || []).map((choice) => {
+                          const isChosen = choice.id === qr.chosenId;
+                          const isCorrectChoice = choice.is_correct;
+                          
+                          let borderClass = 'border border-[#c2c6d8]/50 bg-[#faf8ff]';
+                          let labelClass = 'border border-[#c2c6d8] text-[#424656]';
+                          let textClass = 'text-[#424656]';
+                          let icon = null;
+                          let tag = null;
+
+                          if (isCorrectChoice) {
+                            borderClass = 'border-2 border-[#006688] bg-[#c2e8ff]/20';
+                            labelClass = isChosen ? 'bg-[#006688] text-white' : 'border-2 border-[#006688] text-[#006688]';
+                            textClass = 'text-[#191b24] font-medium';
+                            icon = <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>;
+                            if (!isChosen) tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#006688] text-white text-[10px] rounded font-bold uppercase">Jawaban Benar</div>;
+                          }
+
+                          if (isChosen && !isCorrectChoice) {
+                            borderClass = 'border-2 border-[#ba1a1a] bg-[#ffdad6]/20';
+                            labelClass = 'bg-[#ba1a1a] text-white';
+                            textClass = 'text-[#191b24] font-medium';
+                            icon = <span className="material-symbols-outlined text-[#ba1a1a]" style={{ fontVariationSettings: "'FILL' 1" }}>cancel</span>;
+                            tag = <div className="absolute -top-3 left-4 px-2 py-0.5 bg-[#ba1a1a] text-white text-[10px] rounded font-bold uppercase">Jawabanmu</div>;
+                          }
+
+                          if (isChosen && isCorrectChoice) {
+                            tag = null; // no tag needed, the green border is enough
+                          }
+
+                          return (
+                            <div key={choice.id} className={`relative flex items-center p-3 rounded-xl ${borderClass}`}>
+                              {tag}
+                              <span className={`w-7 h-7 rounded-full flex items-center justify-center mr-3 text-[12px] font-bold flex-shrink-0 ${labelClass}`}>
+                                {choice.label}
+                              </span>
+                              <MathText className={`text-[13px] flex-1 ${textClass}`} text={choice.content || ''} />
+                              {icon && <span className="flex-shrink-0 ml-2">{icon}</span>}
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
 
                     {/* Pembahasan / Explanation */}

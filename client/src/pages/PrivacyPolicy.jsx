@@ -91,7 +91,7 @@ export default function PrivacyPolicy() {
           Untuk pertanyaan tentang kebijakan privasi ini, silakan hubungi kami di:
         </p>
         <div className="bg-gray-50 p-6 rounded-lg mt-4">
-          <p className="text-gray-800"><strong>Email:</strong> ahmadmuzaki.id@gmail.com</p>
+          <p className="text-gray-800"><strong>Email:</strong> eduzetsupport@gmail.com</p>
           <p className="text-gray-800"><strong>Alamat:</strong> Jakarta, Indonesia</p>
           <p className="text-gray-800"><strong>Telepon:</strong> 085183147625</p>
         </div>

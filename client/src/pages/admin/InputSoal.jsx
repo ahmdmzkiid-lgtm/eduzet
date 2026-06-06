@@ -28,6 +28,8 @@ const InputSoal = () => {
     subject_id: '',
     content: '',
     explanation: '',
+    question_type: 'multiple_choice',
+    correct_answer_text: '',
     choices: [
       { label: 'A', content: '', is_correct: true },
       { label: 'B', content: '', is_correct: false },
@@ -71,7 +73,12 @@ const InputSoal = () => {
   const handlePublish = async () => {
     if (!formData.subject_id) { toast.error('Pilih mata pelajaran terlebih dahulu'); return; }
     if (!formData.content.trim()) { toast.error('Teks pertanyaan tidak boleh kosong'); return; }
-    if (formData.choices.some(c => !c.content.trim())) { toast.error('Semua pilihan harus diisi'); return; }
+
+    if (formData.question_type === 'short_answer') {
+      if (!formData.correct_answer_text.trim()) { toast.error('Jawaban benar tidak boleh kosong'); return; }
+    } else {
+      if (formData.choices.some(c => !c.content.trim())) { toast.error('Semua pilihan harus diisi'); return; }
+    }
 
     setLoading(true);
     try {
@@ -79,7 +86,9 @@ const InputSoal = () => {
         subject_id: formData.subject_id,
         difficulty,
         content: formData.content,
-        choices: formData.choices.map(c => ({
+        question_type: formData.question_type,
+        correct_answer_text: formData.question_type === 'short_answer' ? formData.correct_answer_text : null,
+        choices: formData.question_type === 'short_answer' ? [] : formData.choices.map(c => ({
           ...c,
           explanation: c.is_correct ? formData.explanation : null
         }))
@@ -89,6 +98,7 @@ const InputSoal = () => {
         ...prev,
         content: '',
         explanation: '',
+        correct_answer_text: '',
         choices: prev.choices.map(c => ({ ...c, content: '' }))
       }));
     } catch {
@@ -174,73 +184,91 @@ const InputSoal = () => {
 
           {/* Answer Options Card */}
           <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-headline-md text-headline-md text-on-surface">Answer Options</h3>
-              <button
-                type="button"
-                onClick={addOption}
-                disabled={formData.choices.length >= 5}
-                className="flex items-center gap-2 text-primary font-label-md text-label-md hover:bg-[#dae1ff]/30 px-3 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <span className="material-symbols-outlined">add_circle</span>
-                <span>Add Option</span>
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {formData.choices.map((choice, index) => (
-                <div
-                  key={index}
-                  className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${
-                    choice.is_correct
-                      ? 'border-primary bg-[#dae1ff]/20'
-                      : 'border-outline-variant hover:border-outline bg-surface-container-low'
-                  }`}
-                >
-                  {/* Letter Badge */}
-                  <div className="mt-1 flex-shrink-0">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
-                      choice.is_correct
-                        ? 'bg-primary text-on-primary'
-                        : 'bg-surface-variant text-on-surface-variant'
-                    }`}>
-                      {choice.label}
-                    </div>
-                  </div>
-
-                  {/* Text Input */}
-                  <div className="flex-grow">
-                    <textarea
-                      rows={2}
-                      className="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant resize-none"
-                      placeholder={`Masukkan teks pilihan ${choice.label}...`}
-                      value={choice.content}
-                      onChange={e => handleChoiceChange(index, e.target.value)}
-                    />
-                  </div>
-
-                  {/* Toggle + Delete */}
-                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <span className={`font-label-sm text-label-sm ${choice.is_correct ? 'text-primary' : 'text-on-surface-variant'}`}>
-                        Correct
-                      </span>
-                      <Toggle checked={choice.is_correct} onChange={() => handleCorrectChange(index)} />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => removeOption(index)}
-                      className={`p-1 text-outline hover:text-error transition-colors ${
-                        formData.choices.length <= 2 ? 'opacity-20 cursor-not-allowed' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      disabled={formData.choices.length <= 2}
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </div>
+            {formData.question_type === 'short_answer' ? (
+              <div>
+                <h3 className="font-headline-md text-headline-md text-on-surface mb-4">Correct Answer (Isian Singkat)</h3>
+                <div className="bg-surface-container-low border-2 border-outline-variant rounded-xl p-4 transition-all focus-within:border-primary">
+                  <label className="block font-label-sm text-label-sm text-on-surface-variant mb-2">Jawaban Benar</label>
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant"
+                    placeholder="Masukkan teks jawaban benar..."
+                    value={formData.correct_answer_text}
+                    onChange={e => setFormData({ ...formData, correct_answer_text: e.target.value })}
+                  />
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="font-headline-md text-headline-md text-on-surface">Answer Options</h3>
+                  <button
+                    type="button"
+                    onClick={addOption}
+                    disabled={formData.choices.length >= 5}
+                    className="flex items-center gap-2 text-primary font-label-md text-label-md hover:bg-[#dae1ff]/30 px-3 py-2 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span className="material-symbols-outlined">add_circle</span>
+                    <span>Add Option</span>
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {formData.choices.map((choice, index) => (
+                    <div
+                      key={index}
+                      className={`group flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${
+                        choice.is_correct
+                          ? 'border-primary bg-[#dae1ff]/20'
+                          : 'border-outline-variant hover:border-outline bg-surface-container-low'
+                      }`}
+                    >
+                      {/* Letter Badge */}
+                      <div className="mt-1 flex-shrink-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${
+                          choice.is_correct
+                            ? 'bg-primary text-on-primary'
+                            : 'bg-surface-variant text-on-surface-variant'
+                        }`}>
+                          {choice.label}
+                        </div>
+                      </div>
+
+                      {/* Text Input */}
+                      <div className="flex-grow">
+                        <textarea
+                          rows={2}
+                          className="w-full bg-transparent border-none p-0 focus:ring-0 outline-none font-body-md text-body-md text-on-surface placeholder:text-outline-variant resize-none"
+                          placeholder={`Masukkan teks pilihan ${choice.label}...`}
+                          value={choice.content}
+                          onChange={e => handleChoiceChange(index, e.target.value)}
+                        />
+                      </div>
+
+                      {/* Toggle + Delete */}
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <span className={`font-label-sm text-label-sm ${choice.is_correct ? 'text-primary' : 'text-on-surface-variant'}`}>
+                            Correct
+                          </span>
+                          <Toggle checked={choice.is_correct} onChange={() => handleCorrectChange(index)} />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => removeOption(index)}
+                          className={`p-1 text-outline hover:text-error transition-colors ${
+                            formData.choices.length <= 2 ? 'opacity-20 cursor-not-allowed' : 'opacity-0 group-hover:opacity-100'
+                          }`}
+                          disabled={formData.choices.length <= 2}
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             {/* Explanation */}
             <div className="mt-6 pt-6 border-t border-outline-variant/30">
@@ -286,17 +314,33 @@ const InputSoal = () => {
               <div>
                 <label className="block font-label-sm text-label-sm text-on-surface-variant mb-2">Question Type</label>
                 <div className="grid grid-cols-1 gap-2">
-                  <button type="button" className="flex items-center gap-3 p-3 rounded-lg border-2 border-primary bg-[#dae1ff]/10 text-primary font-label-md text-label-md text-left">
-                    <span className="material-symbols-outlined text-[20px]">radio_button_checked</span>
-                    Multiple Choice
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, question_type: 'multiple_choice' })}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                      formData.question_type === 'multiple_choice'
+                        ? 'border-primary bg-[#dae1ff]/10 text-primary font-label-md text-label-md'
+                        : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {formData.question_type === 'multiple_choice' ? 'radio_button_checked' : 'radio_button_unchecked'}
+                    </span>
+                    Multiple Choice (Pilihan Ganda)
                   </button>
-                  <button type="button" className="flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md text-left transition-all">
-                    <span className="material-symbols-outlined text-[20px]">check_circle</span>
-                    True / False
-                  </button>
-                  <button type="button" className="flex items-center gap-3 p-3 rounded-lg border border-outline-variant hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md text-left transition-all">
-                    <span className="material-symbols-outlined text-[20px]">short_text</span>
-                    Short Answer
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, question_type: 'short_answer' })}
+                    className={`flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                      formData.question_type === 'short_answer'
+                        ? 'border-primary bg-[#dae1ff]/10 text-primary font-label-md text-label-md'
+                        : 'border-outline-variant hover:bg-surface-container-low text-on-surface-variant font-label-md text-label-md'
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      {formData.question_type === 'short_answer' ? 'radio_button_checked' : 'radio_button_unchecked'}
+                    </span>
+                    Short Answer (Isian Singkat)
                   </button>
                 </div>
               </div>
@@ -358,13 +402,22 @@ const InputSoal = () => {
                   ? formData.content.substring(0, 80) + (formData.content.length > 80 ? '...' : '')
                   : 'Pertanyaan Anda akan muncul di sini saat siswa mengerjakan soal.'}
               </p>
-              {correctChoice?.content && (
-                <div className="bg-white/10 rounded-lg p-3 mb-4 border border-white/20">
-                  <p className="text-label-sm font-label-sm opacity-70 mb-1 uppercase tracking-wider">Jawaban Benar</p>
-                  <p className="text-label-md font-label-md">
-                    {correctChoice.label}. {correctChoice.content.substring(0, 60)}{correctChoice.content.length > 60 ? '...' : ''}
-                  </p>
-                </div>
+              {formData.question_type === 'short_answer' ? (
+                formData.correct_answer_text && (
+                  <div className="bg-white/10 rounded-lg p-3 mb-4 border border-white/20">
+                    <p className="text-label-sm font-label-sm opacity-70 mb-1 uppercase tracking-wider">Jawaban Benar</p>
+                    <p className="text-label-md font-label-md">{formData.correct_answer_text}</p>
+                  </div>
+                )
+              ) : (
+                correctChoice?.content && (
+                  <div className="bg-white/10 rounded-lg p-3 mb-4 border border-white/20">
+                    <p className="text-label-sm font-label-sm opacity-70 mb-1 uppercase tracking-wider">Jawaban Benar</p>
+                    <p className="text-label-md font-label-md">
+                      {correctChoice.label}. {correctChoice.content.substring(0, 60)}{correctChoice.content.length > 60 ? '...' : ''}
+                    </p>
+                  </div>
+                )
               )}
               <button
                 type="button"
