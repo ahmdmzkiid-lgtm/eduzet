@@ -483,16 +483,17 @@ router.delete('/tryout-packages/:id', [verifyToken, verifyAdmin], async (req, re
 // ========== LATIHAN SOAL (specific routes before /:id) ==========
 router.patch('/latihan/:id', [verifyToken, verifyAdmin], async (req, res, next) => {
   try {
-    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan } = req.body;
+    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan, package_name } = req.body;
     const result = await pool.query(
       `UPDATE um_latihan_soal SET title = COALESCE($1, title), description = COALESCE($2, description),
        category = COALESCE($3, category), icon = COALESCE($4, icon), icon_bg_color = COALESCE($5, icon_bg_color),
        category_color = COALESCE($6, category_color), button_style = COALESCE($7, button_style),
        points_correct = COALESCE($8, points_correct), points_incorrect = COALESCE($9, points_incorrect),
        points_unanswered = COALESCE($10, points_unanswered),
-       is_active = COALESCE($11, is_active), required_plan = COALESCE($12, required_plan)
-       WHERE id = $13 RETURNING *`,
-      [title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan, req.params.id]
+       is_active = COALESCE($11, is_active), required_plan = COALESCE($12, required_plan),
+       package_name = COALESCE($13, package_name)
+       WHERE id = $14 RETURNING *`,
+      [title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan, package_name, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ success: false, error: 'Not found' });
     res.json({ success: true, data: result.rows[0] });
@@ -635,13 +636,13 @@ router.get('/:ujianId/latihan', verifyToken, async (req, res, next) => {
 
 router.post('/:ujianId/latihan', [verifyToken, verifyAdmin], async (req, res, next) => {
   try {
-    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan } = req.body;
+    const { title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan, package_name } = req.body;
     const result = await pool.query(
-      `INSERT INTO um_latihan_soal (ujian_id, title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($12, TRUE), COALESCE($13, 'gratis')) RETURNING *`,
+      `INSERT INTO um_latihan_soal (ujian_id, title, description, category, icon, icon_bg_color, category_color, button_style, points_correct, points_incorrect, points_unanswered, is_active, required_plan, package_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, COALESCE($12, TRUE), COALESCE($13, 'gratis'), COALESCE($14, 'Paket 1')) RETURNING *`,
       [req.params.ujianId, title, description, category, icon || 'auto_stories', icon_bg_color || '#0050cb', category_color || '#0050cb', button_style || 'filled',
        points_correct !== undefined ? points_correct : 4, points_incorrect !== undefined ? points_incorrect : -1, points_unanswered !== undefined ? points_unanswered : 0,
-       is_active, required_plan]
+       is_active, required_plan, package_name]
     );
     res.status(201).json({ success: true, data: result.rows[0] });
   } catch (error) { next(error); }

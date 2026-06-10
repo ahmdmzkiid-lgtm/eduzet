@@ -53,6 +53,7 @@ const emptyLatihan = {
   points_unanswered: 0,
   is_active: true,
   required_plan: 'gratis',
+  package_name: 'Paket 1',
 };
 
 const ICON_OPTIONS = [
@@ -672,6 +673,14 @@ export default function ManageUjianMandiri() {
         <div className="space-y-6">
           {items.map(ujian => {
             const latihans = latihanSoal[ujian.id] || [];
+            // Group by package_name
+            const packageGroups = {};
+            latihans.forEach(lat => {
+              const pkg = lat.package_name || 'Paket 1';
+              if (!packageGroups[pkg]) packageGroups[pkg] = [];
+              packageGroups[pkg].push(lat);
+            });
+            const packageNames = Object.keys(packageGroups).sort();
             return (
               <div key={ujian.id} className="bg-white rounded-2xl border border-[#c2c6d8]/30 overflow-hidden">
                 <div className="px-6 py-4 bg-[#f2f3ff]/50 flex items-center justify-between">
@@ -685,7 +694,7 @@ export default function ManageUjianMandiri() {
                     </div>
                     <div>
                       <h3 className="font-bold text-[16px] text-[#191b24]">{ujian.universitas}</h3>
-                      <p className="text-[12px] text-[#424656]">{ujian.nama_ujian} • {latihans.length} latihan</p>
+                      <p className="text-[12px] text-[#424656]">{ujian.nama_ujian} • {latihans.length} latihan • {packageNames.length} paket</p>
                     </div>
                   </div>
                   <button
@@ -698,47 +707,65 @@ export default function ManageUjianMandiri() {
                 </div>
                 <div className="p-4">
                   {latihans.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {latihans.map(lat => (
-                        <div key={lat.id} className="flex items-center gap-4 p-4 bg-[#f6f3f4] rounded-xl">
-                          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${lat.icon_bg_color || '#0050cb'}15` }}>
-                            <span className="material-symbols-outlined text-[24px]" style={{ color: lat.icon_bg_color || '#0050cb' }}>{lat.icon}</span>
+                    <div className="space-y-6">
+                      {packageNames.map(pkgName => (
+                        <div key={pkgName}>
+                          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-[#c2c6d8]/20">
+                            <span className="material-symbols-outlined text-[18px] text-[#0050cb]">inventory_2</span>
+                            <h4 className="font-bold text-[14px] text-[#191b24]">{pkgName}</h4>
+                            <span className="text-[11px] text-[#727687] bg-[#f2f3ff] px-2 py-0.5 rounded-full">{packageGroups[pkgName].length} latihan</span>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: lat.category_color || '#0050cb' }}>{lat.category}</span>
-                            <h4 className="font-bold text-[14px] text-[#191b24] truncate">{lat.title}</h4>
-                            <p className="text-[12px] text-[#424656] truncate">{lat.description}</p>
-                            <div className="flex gap-2 mt-1">
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold">✓ {lat.points_correct ?? 4}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">✗ {lat.points_incorrect ?? -1}</span>
-                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {lat.points_unanswered ?? 0}</span>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => openManageSoal('latihan', ujian.id, lat)}
-                              className="w-9 h-9 rounded-xl bg-[#0050cb]/10 text-[#0050cb] hover:bg-[#0050cb] hover:text-white flex items-center justify-center transition-all shadow-sm shadow-[#0050cb]/5"
-                              title="Kelola Soal"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">quiz</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openLatihanModal(ujian.id, lat)}
-                              className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-all"
-                              title="Edit Latihan"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">edit</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteLatihan(ujian.id, lat.id)}
-                              className="w-9 h-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-all"
-                              title="Hapus Latihan"
-                            >
-                              <span className="material-symbols-outlined text-[18px]">delete</span>
-                            </button>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {packageGroups[pkgName].map(lat => (
+                              <div key={lat.id} className="flex items-center gap-4 p-4 bg-[#f6f3f4] rounded-xl">
+                                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${lat.icon_bg_color || '#0050cb'}15` }}>
+                                  <span className="material-symbols-outlined text-[24px]" style={{ color: lat.icon_bg_color || '#0050cb' }}>{lat.icon}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: lat.category_color || '#0050cb' }}>{lat.category}</span>
+                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                                      lat.required_plan === 'sultan' ? 'bg-yellow-100 text-yellow-700' :
+                                      lat.required_plan === 'premium' ? 'bg-blue-100 text-blue-700' :
+                                      'bg-green-100 text-green-700'
+                                    }`}>{(lat.required_plan || 'gratis').toUpperCase()}</span>
+                                  </div>
+                                  <h4 className="font-bold text-[14px] text-[#191b24] truncate">{lat.title}</h4>
+                                  <p className="text-[12px] text-[#424656] truncate">{lat.description}</p>
+                                  <div className="flex gap-2 mt-1">
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold">✓ {lat.points_correct ?? 4}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-100 text-red-700 font-bold">✗ {lat.points_incorrect ?? -1}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 font-bold">— {lat.points_unanswered ?? 0}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => openManageSoal('latihan', ujian.id, lat)}
+                                    className="w-9 h-9 rounded-xl bg-[#0050cb]/10 text-[#0050cb] hover:bg-[#0050cb] hover:text-white flex items-center justify-center transition-all shadow-sm shadow-[#0050cb]/5"
+                                    title="Kelola Soal"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">quiz</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openLatihanModal(ujian.id, lat)}
+                                    className="w-9 h-9 rounded-xl bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-all"
+                                    title="Edit Latihan"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">edit</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteLatihan(ujian.id, lat.id)}
+                                    className="w-9 h-9 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 flex items-center justify-center transition-all"
+                                    title="Hapus Latihan"
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">delete</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       ))}
@@ -1041,6 +1068,11 @@ export default function ManageUjianMandiri() {
             </div>
 
             <form onSubmit={handleLatihanSubmit} className="space-y-4">
+              <div>
+                <label className={labelCls}>Nama Paket</label>
+                <input className={inputCls} value={latihanForm.package_name || 'Paket 1'} onChange={(e) => setLatihanForm({ ...latihanForm, package_name: e.target.value })} placeholder="e.g. Paket 1, Paket 2, Paket 3" />
+                <p className="text-[11px] text-[#727687] mt-1">Latihan akan dikelompokkan berdasarkan nama paket ini.</p>
+              </div>
               <div>
                 <label className={labelCls}>Judul Latihan *</label>
                 <input className={inputCls} value={latihanForm.title} onChange={(e) => setLatihanForm({ ...latihanForm, title: e.target.value })} placeholder="e.g. Kemampuan Dasar" required />

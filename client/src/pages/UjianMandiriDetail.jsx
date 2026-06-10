@@ -275,6 +275,155 @@ export default function UjianMandiriDetail() {
 
   const statusCfg = getStatusConfig(ujian.status);
 
+  const renderLatihanCard = (lat) => {
+    const reqPlan = lat.required_plan || 'gratis';
+    const badge = PLAN_BADGE[reqPlan] || PLAN_BADGE.gratis;
+    const reqRank = PLAN_RANK[reqPlan] ?? 0;
+    const locked = reqRank > userRank;
+    const inactive = lat.is_active === false;
+    const lastAttempt = lat.user_history?.[0];
+    const lastScore = lastAttempt?.score;
+    const lastCounts = getAttemptCounts(lastAttempt);
+
+    const handleLatihanClick = () => {
+      if (inactive) {
+        toast.error('Latihan sedang non-aktif.');
+        return;
+      }
+      if (locked) {
+        toast.error(`Latihan ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
+        return;
+      }
+      setConfirmType('latihan');
+      setConfirmData(lat);
+      setConfirmOpen(true);
+    };
+
+    return (
+      <div
+        key={lat.id}
+        className="bg-white border border-[#e5e2e3] rounded-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.08)] flex flex-col p-4 gap-3 hover:border-[#0050cb]/40 transition-all"
+      >
+        <div className="flex justify-between items-start gap-2">
+          <div className="flex-1 min-w-0">
+            <span className="text-[9px] font-bold uppercase tracking-[0.18em] block text-[#0050cb] mb-1">{lat.category || 'Latihan Mandiri'}</span>
+            <h3 className="text-[15px] font-semibold text-[#191b24] truncate">{lat.title}</h3>
+            <p className="text-[12px] text-[#424656] line-clamp-2">{lat.description}</p>
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            {inactive && (
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">Non-aktif</span>
+            )}
+            {!inactive && locked && (
+              <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">
+                {reqPlan === 'sultan' ? 'Khusus Sultan' : 'Khusus Premium'}
+              </span>
+            )}
+            <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded ${badge.className}`}>
+              {badge.label}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] text-[#727687]">
+          <span>{lat.soal_count || 0} Soal</span>
+          <span>•</span>
+          <span className="font-mono bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] text-[10px]">
+            +{lat.points_correct ?? 1} | {lat.points_incorrect ?? 0} | {lat.points_unanswered ?? 0}
+          </span>
+        </div>
+
+        <div className="py-2 border-y border-[#e5e2e3] flex justify-between items-center">
+          <div>
+            <span className="text-[9px] uppercase tracking-wider text-[#727687]">Terakhir</span>
+            <div className="text-[18px] font-bold text-[#0050cb] leading-tight">{lastScore ?? 'Belum ada'}</div>
+          </div>
+          <div className="text-right text-[10px] font-mono text-[#424656] leading-tight">
+            {lastCounts ? (
+              <div className="bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] inline-flex items-center gap-2">
+                <span className="text-green-700">B:{lastCounts.benar}</span>
+                <span className="text-[#ba1a1a]">S:{lastCounts.salah}</span>
+                <span className="text-[#727687]">K:{lastCounts.kosong}</span>
+              </div>
+            ) : (
+              <span className="text-[#727687]">Belum ada detail</span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 mt-auto">
+          <button
+            type="button"
+            onClick={handleLatihanClick}
+            disabled={inactive || locked}
+            className={`py-2.5 rounded-md font-bold text-[12px] flex items-center justify-center gap-2 transition-all ${
+              inactive || locked
+                ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'
+            }`}
+          >
+            {lastScore ? 'Mulai Lagi' : 'Mulai'}
+          </button>
+          <button
+            type="button"
+            onClick={() => lastAttempt && navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lastAttempt.id}`)}
+            disabled={!lastAttempt}
+            className={`py-2.5 rounded-md font-bold text-[12px] border transition-all flex items-center justify-center gap-2 ${
+              lastAttempt
+                ? 'border-[#c2c6d8] text-[#424656] hover:bg-[#f2f3ff]'
+                : 'border-[#e5e2e3] text-gray-400 cursor-not-allowed'
+            }`}
+          >
+            Hasil
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // Helper to group latihan by package_name
+  const groupByPackage = (list) => {
+    const groups = {};
+    list.forEach(lat => {
+      const pkg = lat.package_name || 'Paket 1';
+      if (!groups[pkg]) groups[pkg] = [];
+      groups[pkg].push(lat);
+    });
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+  };
+
+  const gratisLatihan = latihanSoal.filter(lat => (lat.required_plan || 'gratis') === 'gratis');
+  const premiumLatihan = latihanSoal.filter(lat => (lat.required_plan || 'gratis') === 'premium');
+  const sultanLatihan = latihanSoal.filter(lat => (lat.required_plan || 'gratis') === 'sultan');
+
+  const renderPackageGroups = (list) => {
+    const packages = groupByPackage(list);
+    if (packages.length <= 1) {
+      // Only one package or no package — render flat grid without header
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+          {list.map(renderLatihanCard)}
+        </div>
+      );
+    }
+    return (
+      <div className="space-y-8">
+        {packages.map(([pkgName, items]) => (
+          <div key={pkgName}>
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-[18px] text-[#0050cb]">inventory_2</span>
+              <h4 className="text-[16px] font-bold text-[#191b24]">{pkgName}</h4>
+              <span className="text-[11px] text-[#727687] bg-[#f2f3ff] px-2 py-0.5 rounded-full">{items.length} soal</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+              {items.map(renderLatihanCard)}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF8FF]">
       <TopNavbar user={user} isAdmin={isAdmin} onLogout={handleLogout} />
@@ -425,115 +574,41 @@ export default function UjianMandiriDetail() {
           <div className="flex justify-between items-end mb-8">
             <h2 className="text-[24px] lg:text-[32px] font-bold text-[#191b24] leading-tight">Latihan Soal Mandiri</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+          <div className="space-y-10">
             {latihanSoal.length > 0 ? (
-              latihanSoal.map((lat) => {
-                const reqPlan = lat.required_plan || 'gratis';
-                const badge = PLAN_BADGE[reqPlan] || PLAN_BADGE.gratis;
-                const reqRank = PLAN_RANK[reqPlan] ?? 0;
-                const locked = reqRank > userRank;
-                const inactive = lat.is_active === false;
-                const lastAttempt = lat.user_history?.[0];
-                const lastScore = lastAttempt?.score;
-                const lastCounts = getAttemptCounts(lastAttempt);
-
-                const handleLatihanClick = () => {
-                  if (inactive) {
-                    toast.error('Latihan sedang non-aktif.');
-                    return;
-                  }
-                  if (locked) {
-                    toast.error(`Latihan ini khusus paket ${reqPlan === 'sultan' ? 'Sultan' : 'Premium'}.`);
-                    return;
-                  }
-                  setConfirmType('latihan');
-                  setConfirmData(lat);
-                  setConfirmOpen(true);
-                };
-
-                return (
-                  <div
-                    key={lat.id}
-                    className="bg-white border border-[#e5e2e3] rounded-xl shadow-[0_10px_30px_-12px_rgba(0,0,0,0.08)] flex flex-col p-4 gap-3 hover:border-[#0050cb]/40 transition-all"
-                  >
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[9px] font-bold uppercase tracking-[0.18em] block text-[#0050cb] mb-1">{lat.category || 'Latihan Mandiri'}</span>
-                        <h3 className="text-[15px] font-semibold text-[#191b24] truncate">{lat.title}</h3>
-                        <p className="text-[12px] text-[#424656] line-clamp-2">{lat.description}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-1">
-                        {inactive && (
-                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">Non-aktif</span>
-                        )}
-                        {!inactive && locked && (
-                          <span className="text-[9px] font-bold uppercase tracking-[0.16em] px-2 py-1 rounded bg-[#f5f3f4] text-[#727687] border border-[#e5e2e3]">
-                            {reqPlan === 'sultan' ? 'Khusus Sultan' : 'Khusus Premium'}
-                          </span>
-                        )}
-                        <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-2 py-1 rounded ${badge.className}`}>
-                          {badge.label}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 text-[11px] text-[#727687]">
-                      <span>{lat.soal_count || 0} Soal</span>
-                      <span>•</span>
-                      <span className="font-mono bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] text-[10px]">
-                        +{lat.points_correct ?? 1} | {lat.points_incorrect ?? 0} | {lat.points_unanswered ?? 0}
-                      </span>
-                    </div>
-
-                    <div className="py-2 border-y border-[#e5e2e3] flex justify-between items-center">
-                      <div>
-                        <span className="text-[9px] uppercase tracking-wider text-[#727687]">Terakhir</span>
-                        <div className="text-[18px] font-bold text-[#0050cb] leading-tight">{lastScore ?? 'Belum ada'}</div>
-                      </div>
-                      <div className="text-right text-[10px] font-mono text-[#424656] leading-tight">
-                        {lastCounts ? (
-                          <div className="bg-[#f6f3f4] px-2 py-1 rounded border border-[#e5e2e3] inline-flex items-center gap-2">
-                            <span className="text-green-700">B:{lastCounts.benar}</span>
-                            <span className="text-[#ba1a1a]">S:{lastCounts.salah}</span>
-                            <span className="text-[#727687]">K:{lastCounts.kosong}</span>
-                          </div>
-                        ) : (
-                          <span className="text-[#727687]">Belum ada detail</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-auto">
-                      <button
-                        type="button"
-                        onClick={handleLatihanClick}
-                        disabled={inactive || locked}
-                        className={`py-2.5 rounded-md font-bold text-[12px] flex items-center justify-center gap-2 transition-all ${
-                          inactive || locked
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-[#0050cb] text-white hover:bg-[#003fa4]'
-                        }`}
-                      >
-                        {lastScore ? 'Mulai Lagi' : 'Mulai'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => lastAttempt && navigate(`/ujian-mandiri/${id}/latihan/${lat.id}/hasil/${lastAttempt.id}`)}
-                        disabled={!lastAttempt}
-                        className={`py-2.5 rounded-md font-bold text-[12px] border transition-all flex items-center justify-center gap-2 ${
-                          lastAttempt
-                            ? 'border-[#c2c6d8] text-[#424656] hover:bg-[#f2f3ff]'
-                            : 'border-[#e5e2e3] text-gray-400 cursor-not-allowed'
-                        }`}
-                      >
-                        Hasil
-                      </button>
-                    </div>
+              <>
+                {gratisLatihan.length > 0 && (
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#191b24] mb-6 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[#0050cb]">lock_open</span>
+                      Gratis
+                    </h3>
+                    {renderPackageGroups(gratisLatihan)}
                   </div>
-                );
-              })
+                )}
+
+                {premiumLatihan.length > 0 && (
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#191b24] mb-6 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-blue-600">diamond</span>
+                      Premium
+                    </h3>
+                    {renderPackageGroups(premiumLatihan)}
+                  </div>
+                )}
+
+                {sultanLatihan.length > 0 && (
+                  <div>
+                    <h3 className="text-[20px] font-bold text-[#191b24] mb-6 flex items-center gap-2">
+                      <span className="material-symbols-outlined text-yellow-600">star</span>
+                      Sultan
+                    </h3>
+                    {renderPackageGroups(sultanLatihan)}
+                  </div>
+                )}
+              </>
             ) : (
-              <div className="col-span-full text-center py-16 bg-white rounded-xl border border-[#e5e2e3]">
+              <div className="text-center py-16 bg-white rounded-xl border border-[#e5e2e3]">
                 <span className="material-symbols-outlined text-[48px] text-[#c2c6d8] mb-2">menu_book</span>
                 <p className="text-[#727687]">Belum ada latihan soal tersedia untuk ujian ini.</p>
               </div>
