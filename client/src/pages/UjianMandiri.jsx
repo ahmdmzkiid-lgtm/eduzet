@@ -46,16 +46,17 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                   user?.current_plan === 'sultan' ? 'bg-yellow-100 text-yellow-700' :
                   user?.current_plan === 'premium' ? 'bg-blue-100 text-blue-600' :
+                  user?.current_plan === 'premium_um' ? 'bg-teal-100 text-teal-600' :
                   'bg-gray-100 text-gray-500'
                 }`}>
                   <span className="material-symbols-outlined text-[10px]">
-                    {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : 'person'}
+                    {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : user?.current_plan === 'premium_um' ? 'target' : 'person'}
                   </span>
-                  {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : 'Gratis'}
+                  {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : user?.current_plan === 'premium_um' ? 'Premium UM' : 'Gratis'}
                 </span>
               </div>
               <div className={`relative w-10 h-10 rounded-full bg-[#0050cb] flex items-center justify-center text-white font-bold text-sm border-2 ${
-                user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : 'border-transparent'
+                user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : user?.current_plan === 'premium_um' ? 'border-teal-400' : 'border-transparent'
               }`}>
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
               </div>

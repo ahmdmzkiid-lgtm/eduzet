@@ -100,35 +100,7 @@ const LandingPage = () => {
             </div>
             <div className="pricing-grid">
 
-              {/* GRATIS */}
-              <div className="pricing-card">
-                <div className="pricing-card-header">
-                  <h3 className="pricing-name">Gratis</h3>
-                  <p className="pricing-desc">Cocok untuk memulai persiapan UTBK</p>
-                </div>
-                <div className="pricing-price">
-                  <span className="pricing-amount">Rp0</span>
-                  <span className="pricing-period">/tahun</span>
-                </div>
-                <hr className="pricing-divider" />
-                <ul className="pricing-features">
-                  <li>
-                    <span className="material-symbols-outlined pricing-check check-teal">check_circle</span>
-                    <span>Akses soal latihan dasar</span>
-                  </li>
-                  <li>
-                    <span className="material-symbols-outlined pricing-check check-teal">check_circle</span>
-                    <span>Tryout Mingguan</span>
-                  </li>
-                  <li>
-                    <span className="material-symbols-outlined pricing-check check-teal">check_circle</span>
-                    <span>Pembahasan soal terbatas</span>
-                  </li>
-                </ul>
-                <button className="pricing-btn pricing-btn-ghost" onClick={() => navigate('/register')}>
-                  Daftar Gratis
-                </button>
-              </div>
+
 
               {/* PREMIUM */}
               <div className="pricing-card pricing-card-featured">
@@ -139,7 +111,7 @@ const LandingPage = () => {
                 </div>
                 <div className="pricing-price">
                   <span className="pricing-amount">Rp35.000</span>
-                  <span className="pricing-period">/tahun</span>
+                  <span className="pricing-period">/6 bulan</span>
                 </div>
                 <hr className="pricing-divider pricing-divider-blue" />
                 <ul className="pricing-features">
@@ -161,6 +133,37 @@ const LandingPage = () => {
                   </li>
                 </ul>
                 <button className="pricing-btn pricing-btn-primary" onClick={handleUpgradeClick}>
+                  Upgrade Sekarang
+                </button>
+              </div>
+
+              {/* PREMIUM UM */}
+              <div className="pricing-card">
+                <div className="pricing-badge" style={{ backgroundColor: '#0d9488' }}>Paket Mandiri</div>
+                <div className="pricing-card-header">
+                  <h3 className="pricing-name" style={{ color: '#0d9488' }}>Premium UM</h3>
+                  <p className="pricing-desc">Fokus persiapan Ujian Mandiri</p>
+                </div>
+                <div className="pricing-price">
+                  <span className="pricing-amount">Rp15.000</span>
+                  <span className="pricing-period">/2 bulan</span>
+                </div>
+                <hr className="pricing-divider" style={{ borderColor: 'rgba(13, 148, 136, 0.2)' }} />
+                <ul className="pricing-features">
+                  <li>
+                    <span className="material-symbols-outlined pricing-check" style={{ color: '#0d9488' }}>verified</span>
+                    <span className="pricing-feat-bold">Akses semua latihan mandiri</span>
+                  </li>
+                  <li>
+                    <span className="material-symbols-outlined pricing-check" style={{ color: '#0d9488' }}>verified</span>
+                    <span>Akses semua tryout mandiri</span>
+                  </li>
+                  <li>
+                    <span className="material-symbols-outlined pricing-check" style={{ color: '#0d9488' }}>verified</span>
+                    <span>Pembahasan lengkap & analisis</span>
+                  </li>
+                </ul>
+                <button className="pricing-btn" style={{ backgroundColor: '#0d9488', color: '#fff' }} onClick={handleUpgradeClick}>
                   Upgrade Sekarang
                 </button>
               </div>

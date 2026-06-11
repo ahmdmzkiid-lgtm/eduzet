@@ -11,6 +11,7 @@ import StartConfirmationModal from '../components/StartConfirmationModal';
 
 const PLAN_RANK = {
   gratis: 0,
+  premium_um: 1,
   premium: 1,
   sultan: 2,
 };
@@ -23,6 +24,10 @@ const PLAN_BADGE = {
   premium: {
     label: 'PREMIUM',
     className: 'text-[#0050cb] bg-[#dae1ff] border border-[#c0c8f5]',
+  },
+  premium_um: {
+    label: 'PREMIUM UM',
+    className: 'text-teal-700 bg-teal-50 border border-teal-200',
   },
   sultan: {
     label: 'SULTAN',
@@ -90,24 +95,25 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                   user?.current_plan === 'sultan' ? 'bg-yellow-100 text-yellow-700' :
                   user?.current_plan === 'premium' ? 'bg-blue-100 text-blue-600' :
+                  user?.current_plan === 'premium_um' ? 'bg-teal-100 text-teal-600' :
                   'bg-gray-100 text-gray-500'
                 }`}>
                   <span className="material-symbols-outlined text-[10px]">
-                    {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : 'person'}
+                    {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : user?.current_plan === 'premium_um' ? 'target' : 'person'}
                   </span>
-                  {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : 'Gratis'}
+                  {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : user?.current_plan === 'premium_um' ? 'Premium UM' : 'Gratis'}
                 </span>
               </div>
               <div className={`relative w-10 h-10 rounded-full bg-[#0050cb] flex items-center justify-center text-white font-bold text-sm border-2 ${
-                user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : 'border-transparent'
+                user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : user?.current_plan === 'premium_um' ? 'border-teal-400' : 'border-transparent'
               }`}>
                 {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                {(user?.current_plan === 'premium' || user?.current_plan === 'sultan') && (
+                {(user?.current_plan === 'premium' || user?.current_plan === 'premium_um' || user?.current_plan === 'sultan') && (
                   <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center ${
-                    user?.current_plan === 'sultan' ? 'bg-yellow-400 text-yellow-900' : 'bg-blue-500 text-white'
+                    user?.current_plan === 'sultan' ? 'bg-yellow-400 text-yellow-900' : user?.current_plan === 'premium_um' ? 'bg-teal-500 text-white' : 'bg-blue-500 text-white'
                   }`}>
                     <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      {user?.current_plan === 'sultan' ? 'star' : 'diamond'}
+                      {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium_um' ? 'target' : 'diamond'}
                     </span>
                   </span>
                 )}
@@ -146,7 +152,9 @@ const TopNavbar = ({ user, isAdmin, onLogout }) => {
                 </div>
                 <div>
                   <p className="text-[15px] font-bold text-[#191b24]">{user?.name?.split(' ')[0]}</p>
-                  <span className="text-[12px] font-bold uppercase text-[#727687]">{user?.current_plan || 'Gratis'}</span>
+                  <span className="text-[12px] font-bold uppercase text-[#727687]">
+                    {user?.current_plan === 'premium_um' ? 'Premium UM' : (user?.current_plan || 'Gratis')}
+                  </span>
                 </div>
               </div>
               <button type="button" onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">

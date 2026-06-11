@@ -146,7 +146,7 @@ router.post('/register', verifyToken, async (req, res, next) => {
     // Verify user is on a free plan
     const userRes = await pool.query('SELECT current_plan FROM users WHERE id = $1', [req.user.id]);
     const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
-    if (currentPlan !== 'gratis') {
+    if (currentPlan === 'premium' || currentPlan === 'sultan') {
       return res.status(400).json({ success: false, error: 'Pengguna Premium tidak memerlukan pendaftaran sosial media.' });
     }
 
@@ -273,7 +273,7 @@ router.post('/start', verifyToken, async (req, res, next) => {
     const userRes = await client.query('SELECT current_plan FROM users WHERE id = $1', [req.user.id]);
     const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
 
-    if (currentPlan === 'gratis') {
+    if (currentPlan === 'gratis' || currentPlan === 'premium_um') {
       // Check if this specific package has already been completed
       const utbkCompleted = await client.query(
         'SELECT COUNT(*) as count FROM tryout_sessions WHERE user_id = $1 AND package_id = $2 AND submitted_at IS NOT NULL',

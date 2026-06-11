@@ -63,24 +63,25 @@ const ScrollNavbar = ({ user, isAdmin, onLogout }) => {
               <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
                 user?.current_plan === 'sultan' ? 'bg-yellow-400/20 text-yellow-600' :
                 user?.current_plan === 'premium' ? 'bg-blue-500/20 text-blue-500' :
+                user?.current_plan === 'premium_um' ? 'bg-teal-500/20 text-teal-600' :
                 (scrolled ? 'bg-gray-200/60 text-gray-500' : 'bg-white/15 text-white/70')
               }`}>
                 <span className="material-symbols-outlined text-[10px]">
-                  {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : 'person'}
+                  {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium' ? 'diamond' : user?.current_plan === 'premium_um' ? 'target' : 'person'}
                 </span>
-                {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : 'Gratis'}
+                {user?.current_plan === 'sultan' ? 'Sultan' : user?.current_plan === 'premium' ? 'Premium' : user?.current_plan === 'premium_um' ? 'Premium UM' : 'Gratis'}
               </span>
             </div>
             <div className={`relative w-10 h-10 rounded-full bg-[#0050cb] flex items-center justify-center text-white font-bold text-sm border-2 ${
-              user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : 'border-[#dae1ff]'
+              user?.current_plan === 'sultan' ? 'border-yellow-400' : user?.current_plan === 'premium' ? 'border-blue-400' : user?.current_plan === 'premium_um' ? 'border-teal-400' : 'border-[#dae1ff]'
             }`}>
               {user?.name?.charAt(0)?.toUpperCase()}
-              {(user?.current_plan === 'premium' || user?.current_plan === 'sultan') && (
+              {(user?.current_plan === 'premium' || user?.current_plan === 'premium_um' || user?.current_plan === 'sultan') && (
                 <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] ${
-                  user?.current_plan === 'sultan' ? 'bg-yellow-400 text-yellow-900' : 'bg-blue-500 text-white'
+                  user?.current_plan === 'sultan' ? 'bg-yellow-400 text-yellow-900' : user?.current_plan === 'premium_um' ? 'bg-teal-500 text-white' : 'bg-blue-500 text-white'
                 }`}>
                   <span className="material-symbols-outlined text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    {user?.current_plan === 'sultan' ? 'star' : 'diamond'}
+                    {user?.current_plan === 'sultan' ? 'star' : user?.current_plan === 'premium_um' ? 'target' : 'diamond'}
                   </span>
                 </span>
               )}
@@ -120,7 +121,9 @@ const ScrollNavbar = ({ user, isAdmin, onLogout }) => {
               </div>
               <div>
                 <p className="text-[15px] font-bold text-[#191b24]">{user?.name?.split(' ')[0]}</p>
-                <span className="text-[12px] font-bold uppercase text-[#727687]">{user?.current_plan || 'Gratis'}</span>
+                <span className="text-[12px] font-bold uppercase text-[#727687]">
+                  {user?.current_plan === 'premium_um' ? 'Premium UM' : (user?.current_plan || 'Gratis')}
+                </span>
               </div>
             </div>
             <button onClick={() => { setMobileMenuOpen(false); onLogout(); }} className="px-6 py-3 rounded-xl text-[14px] font-bold text-red-500 hover:bg-red-50 flex items-center gap-2 border border-red-100">
@@ -449,46 +452,15 @@ const Dashboard = () => {
 
         <span className="block h-px bg-gradient-to-r from-transparent via-[#c2c6d8] to-transparent opacity-20 my-12"></span>
 
-        {/* Pricing Plans */}
-        <section id="pricing-plans" className="mb-20">
+                <section id="pricing-plans" className="mb-20">
           <div className="text-center mb-12">
             <h3 className="text-[24px] sm:text-[32px] font-bold text-[#191b24] mb-2">Pilih Paket Belajarmu</h3>
             <p className="text-[14px] sm:text-base text-[#424656]">Pilih paket yang sesuai dengan kebutuhan dan targetmu.</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-
-            {/* ── GRATIS ── */}
-            <div className="bg-white border border-[#c2c6d8] p-8 rounded-xl flex flex-col transition-all hover:shadow-sm">
-              <div className="mb-4">
-                <h3 className="text-[20px] sm:text-[24px] leading-8 font-semibold text-[#191b24] mb-2">Gratis</h3>
-                <p className="text-[#424656] text-[14px] leading-5 font-medium">Cocok untuk memulai persiapan UTBK</p>
-              </div>
-              <div className="my-4 flex items-baseline">
-                <span className="text-[32px] sm:text-[48px] leading-[40px] sm:leading-[56px] tracking-[-0.02em] font-bold text-[#191b24]">Rp0</span>
-                <span className="text-[#424656] text-[14px] sm:text-[16px] leading-6 ml-1">/tahun</span>
-              </div>
-              <hr className="border-[#c2c6d8] my-4" />
-              <ul className="flex-grow space-y-4 mb-10">
-                <li className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 0" }}>check_circle</span>
-                  <span className="text-[16px] leading-6 text-[#191b24]">Akses soal latihan dasar</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 0" }}>check_circle</span>
-                  <span className="text-[16px] leading-6 text-[#191b24]">Tryout Mingguan</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[#006688]" style={{ fontVariationSettings: "'FILL' 0" }}>check_circle</span>
-                  <span className="text-[16px] leading-6 text-[#191b24]">Pembahasan soal terbatas</span>
-                </li>
-              </ul>
-              <button className="w-full py-4 border-2 border-[#c2c6d8] text-[#424656] text-[14px] font-medium rounded-lg cursor-not-allowed">
-                Paket Saat Ini
-              </button>
-            </div>
-
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+ 
             {/* ── PREMIUM ── */}
-            <div className="relative bg-white border-2 border-[#0050cb] p-8 rounded-xl flex flex-col shadow-lg transform md:-translate-y-4 transition-all hover:-translate-y-6 z-10">
+            <div className="relative bg-white border-2 border-[#0050cb] p-8 rounded-xl flex flex-col shadow-lg transition-all hover:-translate-y-2 duration-300 z-10">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#0050cb] text-white px-6 py-1 rounded-full text-[12px] font-semibold">
                 Paling Populer
               </div>
@@ -498,7 +470,7 @@ const Dashboard = () => {
               </div>
               <div className="my-4 flex items-baseline">
                 <span className="text-[32px] sm:text-[48px] leading-[40px] sm:leading-[56px] tracking-[-0.02em] font-bold text-[#191b24]">Rp35.000</span>
-                <span className="text-[#424656] text-[14px] sm:text-[16px] leading-6 ml-1">/tahun</span>
+                <span className="text-[#424656] text-[14px] sm:text-[16px] leading-6 ml-1">/6 bulan</span>
               </div>
               <hr className="border-[#0066ff]/20 my-4" />
               <ul className="flex-grow space-y-4 mb-10">
@@ -527,9 +499,46 @@ const Dashboard = () => {
                 {paying === 'premium' ? 'Memproses...' : 'Upgrade Sekarang'}
               </button>
             </div>
-
+ 
+            {/* ── PREMIUM UM ── */}
+            <div className="bg-white border-2 border-teal-500 p-8 rounded-xl flex flex-col shadow-lg transition-all hover:-translate-y-2 duration-300 relative">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-teal-600 text-white px-6 py-1 rounded-full text-[12px] font-semibold">
+                Paket Mandiri
+              </div>
+              <div className="mb-4">
+                <h3 className="text-[20px] sm:text-[24px] leading-8 font-semibold text-teal-600 mb-2">Premium UM</h3>
+                <p className="text-[#424656] text-[14px] leading-5 font-medium">Fokus persiapan Ujian Mandiri</p>
+              </div>
+              <div className="my-4 flex items-baseline">
+                <span className="text-[32px] sm:text-[48px] leading-[40px] sm:leading-[56px] tracking-[-0.02em] font-bold text-[#191b24]">Rp15.000</span>
+                <span className="text-[#424656] text-[14px] sm:text-[16px] leading-6 ml-1">/2 bulan</span>
+              </div>
+              <hr className="border-teal-500/20 my-4" />
+              <ul className="flex-grow space-y-4 mb-10">
+                <li className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-teal-600" style={{ fontVariationSettings: "'FILL' 0" }}>verified</span>
+                  <span className="text-[16px] leading-6 text-[#191b24] font-semibold">Akses semua latihan mandiri</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-teal-600" style={{ fontVariationSettings: "'FILL' 0" }}>verified</span>
+                  <span className="text-[16px] leading-6 text-[#191b24]">Akses semua tryout mandiri</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-teal-600" style={{ fontVariationSettings: "'FILL' 0" }}>verified</span>
+                  <span className="text-[16px] leading-6 text-[#191b24]">Pembahasan lengkap & analisis</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => handleUpgrade('premium_um')}
+                disabled={paying === 'premium_um'}
+                className="w-full py-4 bg-teal-600 text-white text-[14px] font-medium rounded-lg shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-50 disabled:cursor-wait"
+              >
+                {paying === 'premium_um' ? 'Memproses...' : 'Upgrade Sekarang'}
+              </button>
+            </div>
+ 
             {/* ── SULTAN ── */}
-            <div className="bg-gradient-to-br from-[#191b24] to-[#2e303a] p-8 rounded-xl flex flex-col text-white transition-all hover:shadow-xl">
+            <div className="bg-gradient-to-br from-[#191b24] to-[#2e303a] p-8 rounded-xl flex flex-col text-white transition-all hover:-translate-y-2 duration-300 shadow-lg">
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="material-symbols-outlined text-[#ffdbd0]" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
@@ -564,7 +573,7 @@ const Dashboard = () => {
                 {paying === 'sultan' ? 'Memproses...' : 'Go Sultan'}
               </button>
             </div>
-
+ 
           </div>
         </section>
 

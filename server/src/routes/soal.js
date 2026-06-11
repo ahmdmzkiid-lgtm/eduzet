@@ -39,7 +39,7 @@ router.get('/', verifyToken, async (req, res, next) => {
       const userRes = await pool.query('SELECT current_plan FROM users WHERE id = $1', [req.user.id]);
       const currentPlan = userRes.rows[0]?.current_plan || 'gratis';
 
-      if (currentPlan === 'gratis') {
+      if (currentPlan === 'gratis' || currentPlan === 'premium_um') {
         // 1. One-time check per exercise: Free users cannot repeat completed topics/subjects
         let completed = 0;
         if (topic_id) {

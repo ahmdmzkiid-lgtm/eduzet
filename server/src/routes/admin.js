@@ -142,7 +142,7 @@ router.get('/stats', verifyToken, verifyAdmin, async (req, res, next) => {
       recentQuestionsResult,
     ] = await Promise.all([
       // Total users
-      pool.query("SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE role = 'student') as students, COUNT(*) FILTER (WHERE role = 'student' AND current_plan = 'premium') as premium_students, COUNT(*) FILTER (WHERE role = 'student' AND current_plan = 'sultan') as sultan_students, COUNT(*) FILTER (WHERE role = 'admin') as admins FROM users"),
+      pool.query("SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE role = 'student') as students, COUNT(*) FILTER (WHERE role = 'student' AND current_plan = 'premium') as premium_students, COUNT(*) FILTER (WHERE role = 'student' AND current_plan = 'premium_um') as premium_um_students, COUNT(*) FILTER (WHERE role = 'student' AND current_plan = 'sultan') as sultan_students, COUNT(*) FILTER (WHERE role = 'admin') as admins FROM users"),
       // Total questions
       pool.query("SELECT COUNT(*) as total FROM questions"),
       // Tryout sessions
@@ -175,6 +175,7 @@ router.get('/stats', verifyToken, verifyAdmin, async (req, res, next) => {
           total: parseInt(usersResult.rows[0].total),
           students: parseInt(usersResult.rows[0].students),
           premiumStudents: parseInt(usersResult.rows[0].premium_students),
+          premiumUmStudents: parseInt(usersResult.rows[0].premium_um_students || 0),
           sultanStudents: parseInt(usersResult.rows[0].sultan_students),
           admins: parseInt(usersResult.rows[0].admins),
         },

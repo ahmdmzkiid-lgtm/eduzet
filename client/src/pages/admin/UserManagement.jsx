@@ -32,6 +32,9 @@ const PlanBadge = ({ plan }) => {
   if (plan === 'premium') {
     return <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-800 font-label-sm text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>diamond</span> Premium</span>;
   }
+  if (plan === 'premium_um') {
+    return <span className="px-3 py-1 rounded-full bg-teal-100 text-teal-800 font-label-sm text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit"><span className="material-symbols-outlined text-[14px]" style={{ fontVariationSettings: "'FILL' 1" }}>target</span> Premium UM</span>;
+  }
   return <span className="px-3 py-1 rounded-full bg-[#dcfce7] text-[#166534] font-label-sm text-[11px] font-bold uppercase tracking-wider flex items-center gap-1 w-fit"><span className="material-symbols-outlined text-[14px]">person</span> Gratis</span>;
 };
 
@@ -126,7 +129,7 @@ const UserManagement = () => {
       </div>
 
       {/* Stats Cards */}
-      <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-16">
+      <section className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-16">
         {/* Sultan Students */}
         <div className="bg-surface p-8 rounded-2xl border border-outline-variant hover:border-yellow-400 transition-all shadow-sm flex flex-col justify-between group">
           <div>
@@ -152,6 +155,20 @@ const UserManagement = () => {
           </div>
           <p className="font-label-sm text-label-sm text-blue-700 mt-6 flex items-center gap-1">
             <span className="material-symbols-outlined text-[16px]">verified</span> Paket Premium Aktif
+          </p>
+        </div>
+
+        {/* Premium UM Students */}
+        <div className="bg-surface p-8 rounded-2xl border border-outline-variant hover:border-teal-400 transition-all shadow-sm flex flex-col justify-between group">
+          <div>
+            <div className="w-14 h-14 bg-teal-100 rounded-xl flex items-center justify-center mb-6 text-teal-700 group-hover:scale-110 transition-transform">
+              <span className="material-symbols-outlined text-[32px]" style={{ fontVariationSettings: "'FILL' 1" }}>target</span>
+            </div>
+            <p className="font-label-md text-label-md text-on-surface-variant mb-1">Premium UM Students</p>
+            <p className="text-[48px] font-bold leading-none text-on-surface">{stats.premiumUmStudents?.toLocaleString('id-ID') || '0'}</p>
+          </div>
+          <p className="font-label-sm text-label-sm text-teal-700 mt-6 flex items-center gap-1">
+            <span className="material-symbols-outlined text-[16px]">verified</span> Paket Premium UM Aktif
           </p>
         </div>
 
@@ -272,6 +289,7 @@ const UserManagement = () => {
                         <option value="all">Semua Paket</option>
                         <option value="sultan">Sultan</option>
                         <option value="premium">Premium</option>
+                        <option value="premium_um">Premium UM</option>
                         <option value="gratis">Gratis</option>
                       </select>
                     </div>

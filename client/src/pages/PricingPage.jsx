@@ -27,6 +27,17 @@ const PLAN_STYLES = {
     priceText: 'text-gray-900',
     featureIcon: 'text-blue-500',
   },
+  premium_um: {
+    bg: 'bg-white',
+    border: 'border-teal-500 ring-2 ring-teal-100',
+    badge: 'Ujian Mandiri',
+    btnClass: 'bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-200',
+    btnLabel: 'Upgrade Sekarang',
+    icon: '🎯',
+    headerText: 'text-teal-600',
+    priceText: 'text-gray-900',
+    featureIcon: 'text-teal-500',
+  },
   sultan: {
     bg: 'bg-gray-900',
     border: 'border-gray-700',
@@ -188,11 +199,20 @@ export default function PricingPage() {
   const currentPlanName = currentSub?.plan_name || user?.current_plan || 'gratis';
   const pendingTxs = transactions.filter(t => t.status === 'pending');
 
-  const formatPrice = (price) => {
+  const getPeriodLabel = (durationDays) => {
+    if (!durationDays) return '';
+    if (durationDays >= 365) return '/tahun';
+    if (durationDays === 180) return '/6 bulan';
+    if (durationDays === 60) return '/2 bulan';
+    const months = Math.round(durationDays / 30);
+    return `/${months} bulan`;
+  };
+
+  const formatPrice = (price, durationDays) => {
     if (price === 0) return { amount: 'Rp0', period: '' };
     return {
       amount: `Rp${price.toLocaleString('id-ID')}`,
-      period: '/tahun',
+      period: getPeriodLabel(durationDays),
     };
   };
 
@@ -262,7 +282,7 @@ export default function PricingPage() {
           {plans.map((plan) => {
             const style = PLAN_STYLES[plan.name] || PLAN_STYLES.gratis;
             const isCurrent = currentPlanName === plan.name;
-            const { amount, period } = formatPrice(plan.price);
+            const { amount, period } = formatPrice(plan.price, plan.duration_days);
             const features = typeof plan.features === 'string' ? JSON.parse(plan.features) : plan.features;
             const isDark = plan.name === 'sultan';
 
