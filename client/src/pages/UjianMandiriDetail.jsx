@@ -315,7 +315,7 @@ export default function UjianMandiriDetail() {
         <div className="flex justify-between items-start gap-2">
           <div className="flex-1 min-w-0">
             <span className="text-[9px] font-bold uppercase tracking-[0.18em] block text-[#0050cb] mb-1">{lat.category || 'Latihan Mandiri'}</span>
-            <h3 className="text-[15px] font-semibold text-[#191b24] truncate">{lat.title}</h3>
+            <h3 className="text-[15px] font-semibold text-[#191b24] whitespace-normal">{lat.title}</h3>
             <p className="text-[12px] text-[#424656] line-clamp-2">{lat.description}</p>
           </div>
           <div className="flex flex-col items-end gap-1">
@@ -497,7 +497,7 @@ export default function UjianMandiriDetail() {
                   >
                     <div className="flex justify-between items-start gap-3">
                       <div className="flex-1 min-w-0 space-y-1">
-                        <h3 className="text-[16px] lg:text-[18px] font-semibold text-[#191b24] truncate">{pkg.title}</h3>
+                        <h3 className="text-[16px] lg:text-[18px] font-semibold text-[#191b24] whitespace-normal">{pkg.title}</h3>
                         <p className="text-[12px] lg:text-[13px] text-[#424656] line-clamp-2">{pkg.description}</p>
                       </div>
                       <div className="flex items-center gap-2">
