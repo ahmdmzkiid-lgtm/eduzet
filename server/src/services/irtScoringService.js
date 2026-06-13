@@ -195,7 +195,8 @@ function calculateIRTScore(answers) {
       isCorrect: ans.chosen_choice_id ? ans.is_correct : false,
       difficulty,
       irtParams,
-      questionId: ans.question_id
+      questionId: ans.question_id,
+      chosenChoiceId: ans.chosen_choice_id
     };
   });
 
@@ -236,6 +237,7 @@ function calculateIRTScore(answers) {
       questionId: resp.questionId,
       difficulty: resp.difficulty,
       isCorrect: resp.isCorrect,
+      chosenChoiceId: resp.chosenChoiceId || null,
       probabilityCorrect: Math.round(pCorrect * 100),
       informationValue: Math.round(info * 100) / 100,
       status: resp.isCorrect ? 'correct' : 'incorrect'

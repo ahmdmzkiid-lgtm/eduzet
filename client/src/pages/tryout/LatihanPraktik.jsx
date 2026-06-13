@@ -138,15 +138,15 @@ const LatihanPraktik = () => {
         answers,
       });
       const irtData = res.data?.data || {};
-      navigate('/latihan/hasil', {
+      const sessionId = irtData.sessionId;
+      navigate(`/latihan/hasil${sessionId ? `/${sessionId}` : ''}`, {
         state: { questions, answers, subjectName, subjectId, topicId, irtData }
       });
     } catch (err) {
       console.error('Failed to submit latihan:', err);
-      // Still navigate even if save fails
-      navigate('/latihan/hasil', {
-        state: { questions, answers, subjectName, subjectId, topicId }
-      });
+      toast.error('Gagal menyimpan hasil latihan. Silakan coba lagi.');
+      setSubmitting(false);
+      return;
     } finally {
       setSubmitting(false);
     }

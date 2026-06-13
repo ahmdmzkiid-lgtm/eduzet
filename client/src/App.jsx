@@ -87,6 +87,7 @@ function App() {
             <Route path="/tryout/packages" element={<PusatTryout />} />
             <Route path="/latihan/praktik/:subjectId" element={<LatihanPraktik />} />
             <Route path="/latihan/hasil" element={<LatihanResult />} />
+            <Route path="/latihan/hasil/:sessionId" element={<LatihanResult />} />
             <Route path="/latihan/:subjectId" element={<TopikLatihan />} />
             <Route path="/tryout/select/:packageId" element={<TryoutSubtesSelect />} />
             <Route path="/tryout/:sessionId" element={<TryoutSession />} />

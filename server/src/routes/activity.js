@@ -597,4 +597,113 @@ router.get('/', verifyToken, async (req, res, next) => {
   }
 });
 
+// Get latihan session result (for UTBK Latihan)
+router.get('/latihan/result/:sessionId', verifyToken, async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { sessionId } = req.params;
+
+    const sessionRes = await pool.query(
+      `SELECT ls.*
+       FROM latihan_sessions ls
+       WHERE ls.id = $1 AND ls.user_id = $2`,
+      [sessionId, userId]
+    );
+
+    if (sessionRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Session not found' });
+    }
+
+    const session = sessionRes.rows[0];
+    const breakdown = typeof session.score_breakdown === 'string'
+      ? JSON.parse(session.score_breakdown)
+      : session.score_breakdown;
+
+    const itemAnalysis = breakdown?.itemAnalysis || [];
+
+    if (itemAnalysis.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          subjectName: session.subject_name,
+          subjectId: session.subject_id,
+          topicId: session.topic_id,
+          score_breakdown: breakdown,
+          questions: [],
+        }
+      });
+    }
+
+    // Fetch questions and their choices from the questions table
+    const questionIds = itemAnalysis.map(item => item.questionId).filter(Boolean);
+    if (questionIds.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          subjectName: session.subject_name,
+          subjectId: session.subject_id,
+          topicId: session.topic_id,
+          score_breakdown: breakdown,
+          questions: [],
+        }
+      });
+    }
+
+    const questionsRes = await pool.query(
+      `SELECT q.id, q.content, q.image_url, q.image_position, q.difficulty, q.subject_id, q.question_type,
+              json_agg(
+                json_build_object(
+                  'id', ac.id,
+                  'label', ac.label,
+                  'content', ac.content,
+                  'is_correct', ac.is_correct,
+                  'explanation', ac.explanation
+                ) ORDER BY ac.label
+              ) AS choices
+       FROM questions q
+       LEFT JOIN answer_choices ac ON ac.question_id = q.id
+       WHERE q.id = ANY($1::uuid[])
+       GROUP BY q.id
+       ORDER BY array_position($1::uuid[], q.id)`,
+      [questionIds]
+    );
+
+    const questions = questionsRes.rows.map(q => ({
+      ...q,
+      choices: q.choices.filter(c => c.id !== null),
+    }));
+
+    // Merge itemAnalysis data into each question
+    const enrichedQuestions = questions.map(q => {
+      const analysis = itemAnalysis.find(item => item.questionId === q.id) || {};
+      const chosenChoiceId = analysis.chosenChoiceId || null;
+      const chosenChoice = chosenChoiceId ? q.choices.find(c => c.id === chosenChoiceId) : null;
+      const correctChoice = q.choices.find(c => c.is_correct) || null;
+      return {
+        ...q,
+        chosenChoiceId,
+        chosenChoice: chosenChoice || null,
+        correctChoice,
+        isCorrect: analysis.isCorrect === true,
+        isAnswered: !!chosenChoiceId,
+        difficulty: analysis.difficulty || q.difficulty || 'medium',
+      };
+    });
+
+    res.json({
+      success: true,
+      data: {
+        subjectName: session.subject_name,
+        subjectId: session.subject_id,
+        topicId: session.topic_id,
+        score_breakdown: breakdown,
+        questions: enrichedQuestions,
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching latihan result:', error);
+    next(error);
+  }
+});
+
 module.exports = router;

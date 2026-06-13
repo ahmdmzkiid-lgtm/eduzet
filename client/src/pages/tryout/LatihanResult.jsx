@@ -1,17 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import DiscussQuestionModal from '../../components/DiscussQuestionModal';
 import MathText from '../../components/MathText';
-import { tryoutService } from '../../services/api';
+import { tryoutService, activityService } from '../../services/api';
 import NationalLeaderboardCard from '../../components/NationalLeaderboardCard';
 
 const LatihanResult = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { sessionId } = useParams();
   const { user } = useAuth();
   const isAdmin = user?.role === 'admin';
   const [filter, setFilter] = useState('all'); // 'all' | 'wrong'
+  const [loading, setLoading] = useState(false);
 
   // Discussion State
   const [isDiscussOpen, setIsDiscussOpen] = useState(false);
@@ -22,13 +24,12 @@ const LatihanResult = () => {
   const [leaderboard, setLeaderboard] = useState(null);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
 
-  const openDiscussion = (question) => {
-    setSelectedQuestion(question);
-    setIsDiscussOpen(true);
-  };
+  // Local state for API data
+  const [apiData, setApiData] = useState(null);
 
   // Data passed from LatihanPraktik via navigation state
-  const { questions = [], answers = {}, subjectName = 'Latihan', subjectId = '', topicId = '', irtData = null } = location.state || {};
+  const stateData = location.state || {};
+  const { questions = [], answers = {}, subjectName = 'Latihan', subjectId = '', topicId = '', irtData = null } = apiData || stateData;
 
   useEffect(() => {
     if (subjectId) {
@@ -44,10 +45,43 @@ const LatihanResult = () => {
     }
   }, [subjectId, topicId]);
 
+  // Fetch from API when state is lost but sessionId is available
+  useEffect(() => {
+    if (!location.state && sessionId) {
+      setLoading(true);
+      activityService.getLatihanResult(sessionId)
+        .then((res) => {
+          if (res.data?.success && res.data.data?.questions?.length > 0) {
+            setApiData(res.data.data);
+          } else {
+            setApiData(null);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching latihan result:', err);
+          setApiData(null);
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [sessionId, location.state]);
+
+  const openDiscussion = (question) => {
+    setSelectedQuestion(question);
+    setIsDiscussOpen(true);
+  };
+
   // Calculate results
   const totalQuestions = questions.length;
   let correctCount = 0;
   const questionResults = questions.map((q, idx) => {
+    // If data came from API, use pre-computed analysis
+    if (apiData) {
+      const isAnswered = !!q.chosenChoiceId;
+      const isCorrect = q.isCorrect === true;
+      if (isCorrect) correctCount++;
+      return { ...q, idx, chosenId: q.chosenChoiceId, chosenChoice: q.chosenChoice, correctChoice: q.correctChoice, isCorrect, isAnswered };
+    }
+    // Otherwise compute from state answers map
     const chosenId = answers[idx];
     const isShortAnswer = q.question_type === 'short_answer';
     const correctChoice = q.choices?.find(c => c.is_correct) || null;
@@ -69,16 +103,29 @@ const LatihanResult = () => {
   const score = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
 
   // IRT Score from backend (0-1000 scale)
-  const irtScore = irtData?.irtScore || 0;
-  const theta = irtData?.theta || 0;
-  const percentile = irtData?.percentile || 0;
+  const breakdown = apiData?.score_breakdown || {};
+  const irtScore = irtData?.irtScore || breakdown.totalScore || 0;
+  const theta = irtData?.theta || breakdown.theta || 0;
+  const percentile = irtData?.percentile || breakdown.percentile || 0;
 
   const filteredResults = filter === 'wrong'
     ? questionResults.filter(r => !r.isCorrect)
     : questionResults;
 
+  // Loading state
+  if (loading || (!location.state && sessionId && !apiData)) {
+    return (
+      <div className="bg-[#faf8ff] min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#0050cb] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#424656]">Memuat hasil latihan...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Redirect if no data
-  if (!location.state || questions.length === 0) {
+  if ((!location.state && !sessionId) || questions.length === 0) {
     return (
       <div className="bg-[#faf8ff] min-h-screen flex items-center justify-center">
         <div className="text-center">
