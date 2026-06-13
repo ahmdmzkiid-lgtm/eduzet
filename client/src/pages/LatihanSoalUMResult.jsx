@@ -111,16 +111,17 @@ const LatihanSoalUMResult = () => {
     questionResults = effectiveQuestions.map((q, idx) => {
       const choices = q.choices || [];
       const correctChoice = choices.find(c => c.is_correct) || null;
+      const chosenChoice = q.chosenChoiceId ? choices.find(c => c.id === q.chosenChoiceId) || null : null;
       const isCorrect = q.isCorrect === true;
       if (isCorrect) correctCount++;
       return {
         ...q,
         idx: q.position ? q.position - 1 : idx,
-        chosenId: null,
-        chosenChoice: null,
+        chosenId: chosenChoice?.id || null,
+        chosenChoice,
         correctChoice,
         isCorrect,
-        isAnswered: false,
+        isAnswered: !!q.chosenChoiceId,
       };
     });
   }

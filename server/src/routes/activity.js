@@ -73,6 +73,14 @@ router.post('/latihan/submit', verifyToken, async (req, res, next) => {
         pointsIncorrect: ptIncorrect,
         pointsUnanswered: ptUnanswered,
         scoringMethod: `Custom (Benar: ${ptCorrect > 0 ? '+' : ''}${ptCorrect}, Salah: ${ptIncorrect > 0 ? '+' : ''}${ptIncorrect}, Kosong: ${ptUnanswered > 0 ? '+' : ''}${ptUnanswered})`,
+        itemAnalysis: irtAnswers.map((a, idx) => ({
+          questionIndex: idx,
+          questionId: a.question_id,
+          difficulty: a.difficulty || 'medium',
+          isCorrect: a.is_correct,
+          chosenChoiceId: a.chosen_choice_id,
+          subjectName: a.subject_name || 'Latihan',
+        })),
       };
     } else {
       // Calculate IRT score (standard latihan)

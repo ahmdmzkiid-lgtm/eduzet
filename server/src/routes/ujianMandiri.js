@@ -1010,6 +1010,7 @@ router.get('/latihan/result/:sessionId', verifyToken, async (req, res, next) => 
         const choices = Array.isArray(q.choices) ? q.choices : [];
         const analysis = analysisByQuestionId[q.id] || null;
         const isCorrect = analysis ? !!analysis.isCorrect : null;
+        const chosenChoiceId = analysis ? analysis.chosenChoiceId || null : null;
 
         return {
           id: q.id,
@@ -1019,6 +1020,7 @@ router.get('/latihan/result/:sessionId', verifyToken, async (req, res, next) => 
           difficulty: q.difficulty,
           choices,
           isCorrect,
+          chosenChoiceId,
         };
       });
     }

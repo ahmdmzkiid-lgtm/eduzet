@@ -135,8 +135,11 @@ const LatihanSoalUM = () => {
       });
 
       const irtData = res.data?.data || {};
+      const sessionId = res.data?.data?.sessionId;
 
-      navigate(`/ujian-mandiri/${ujianId}/latihan/${latihanId}/hasil`, {
+      navigate(sessionId
+        ? `/ujian-mandiri/${ujianId}/latihan/${latihanId}/hasil/${sessionId}`
+        : `/ujian-mandiri/${ujianId}/latihan/${latihanId}/hasil`, {
         state: { 
           questions, 
           answers, 
@@ -144,23 +147,13 @@ const LatihanSoalUM = () => {
           ujianName: ujian?.nama_ujian,
           ujianId,
           latihanId,
-          irtData
+          irtData,
+          sessionId,
         }
       });
     } catch (err) {
       console.error('Failed to persist UM latihan session:', err);
-      // Fallback: navigate even if persistence fails
-      navigate(`/ujian-mandiri/${ujianId}/latihan/${latihanId}/hasil`, {
-        state: { 
-          questions, 
-          answers, 
-          latihanName: latihan?.title,
-          ujianName: ujian?.nama_ujian,
-          ujianId,
-          latihanId
-        }
-      });
-    } finally {
+      toast.error('Gagal menyimpan latihan. Coba lagi.');
       setSubmitting(false);
     }
   };
