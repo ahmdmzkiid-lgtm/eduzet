@@ -1,15 +1,62 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { getApiKeyManager } = require('./apiKeyManager');
 
 const initGemini = () => {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('GEMINI_API_KEY is not configured');
+  const manager = getApiKeyManager();
+  const genAI = manager.getNextGeminiInstance();
+
+  if (!genAI) {
+    throw new Error('All Gemini API keys are currently exhausted. Please try again later.');
   }
-  return new GoogleGenerativeAI(apiKey);
+
+  return genAI;
+};
+
+/**
+ * Execute a Gemini API operation with automatic retry and key rotation
+ * @param {Function} operation - Async function that performs the Gemini API call
+ * @param {number} maxRetries - Maximum number of retry attempts (default: 3)
+ * @returns {Promise} Result from the operation
+ */
+const executeWithRetry = async (operation, maxRetries = 3) => {
+  const manager = getApiKeyManager();
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      // Execute the operation
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      // Check if this is a rate limit error
+      if (manager.isRateLimitError(error)) {
+        console.warn(`[Gemini] Rate limit hit on attempt ${attempt}/${maxRetries}`);
+
+        // Check if we have more keys available
+        const availableKeys = manager.getAvailableKeysCount();
+
+        if (availableKeys > 0 && attempt < maxRetries) {
+          console.log(`[Gemini] Retrying with next available key (${availableKeys} keys remaining)...`);
+          // The next attempt will automatically use the next key via initGemini()
+          continue;
+        } else {
+          // No more keys or max retries reached
+          throw new Error('Maaf ya, Kak Z sedang banyak yang nanya nih (semua API key mencapai batas). Coba lagi beberapa saat ya! 🙏');
+        }
+      } else {
+        // Non-rate-limit error, don't retry
+        throw error;
+      }
+    }
+  }
+
+  // If we get here, all retries failed
+  throw lastError;
 };
 
 const chatWithKakZ = async (message, history = []) => {
-  try {
+  return executeWithRetry(async () => {
     const genAI = initGemini();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
@@ -19,8 +66,9 @@ TENTANG EDUZET:
 Eduzet adalah platform latihan soal dan tryout UTBK/SNBT. Fitur yang tersedia HANYA:
 - Latihan soal (7 subtes)
 - Tryout UTBK/SNBT
+- Ujian Mandiri PTN
 7 subtes: Penalaran Umum (PU), Pengetahuan dan Pemahaman Umum (PPU), Pemahaman Bacaan dan Tulisan (PBM), Pengetahuan Kuantitatif (PK), Literasi Bahasa Indonesia (LBI), Literasi Bahasa Inggris (LBE), Penalaran Matematika (PM).
-Paket: Gratis (latihan terbatas), Premium Rp35.000/tahun (semua latihan + 3 tryout), Sultan Rp60.000/tahun (semua latihan + semua tryout + konsultasi AI).
+Paket: Gratis (latihan terbatas), Premium Rp35.000/6 bulan (semua latihan + 10 tryout), Premium Ujian Mandiri Rp. 15.000/2 bulan (akses semua latihan soal dan tryout ujian mandiri), Sultan Rp60.000/tahun (semua latihan + semua tryout + konsultasi AI).
 
 TUGASMU:
 - Bantu siswa tentang fitur Eduzet, cara pakai, paket belajar, dan kendala teknis
@@ -53,17 +101,17 @@ ATURAN KETAT:
     const result = await chat.sendMessage(message);
     const response = await result.response;
     return response.text();
-  } catch (error) {
+  }).catch(error => {
     console.error('Gemini chat error:', error);
-    if (error.message && (error.message.includes('Too Many Requests') || error.message.includes('quota'))) {
-      throw new Error('Maaf ya, Kak Z sedang banyak yang nanya nih (batas kuota API tercapai). Coba lagi beberapa saat ya! 🙏');
+    if (error.message && error.message.includes('Kak Z sedang banyak yang nanya')) {
+      throw error; // Already formatted by executeWithRetry
     }
     throw new Error('Gagal menghubungi Kak Z. Ada gangguan teknis sebentar.');
-  }
+  });
 };
 
 const chatDiscussQuestion = async (message, questionContext, history = []) => {
-  try {
+  return executeWithRetry(async () => {
     const genAI = initGemini();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
@@ -114,17 +162,17 @@ ATURAN KETAT:
     const result = await chat.sendMessage(message);
     const response = await result.response;
     return response.text();
-  } catch (error) {
+  }).catch(error => {
     console.error('Gemini discussion error:', error);
-    if (error.message && (error.message.includes('Too Many Requests') || error.message.includes('quota'))) {
-      throw new Error('Maaf ya, Kak Z sedang banyak yang nanya nih (batas kuota API tercapai). Coba lagi beberapa saat ya! 🙏');
+    if (error.message && error.message.includes('Kak Z sedang banyak yang nanya')) {
+      throw error; // Already formatted by executeWithRetry
     }
     throw new Error('Gagal menghubungi Kak Z. Ada gangguan teknis sebentar.');
-  }
+  });
 };
 
 const chatKonsultasi = async (message, history = []) => {
-  try {
+  return executeWithRetry(async () => {
     const genAI = initGemini();
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
@@ -204,13 +252,13 @@ ATURAN KETAT:
     const result = await chat.sendMessage(message);
     const response = await result.response;
     return response.text();
-  } catch (error) {
+  }).catch(error => {
     console.error('Gemini konsultasi error:', error);
-    if (error.message && (error.message.includes('Too Many Requests') || error.message.includes('quota'))) {
-      throw new Error('Maaf ya, Kak Z sedang banyak yang nanya nih (batas kuota API tercapai). Coba lagi beberapa saat ya! 🙏');
+    if (error.message && error.message.includes('Kak Z sedang banyak yang nanya')) {
+      throw error; // Already formatted by executeWithRetry
     }
     throw new Error('Gagal menghubungi Kak Z. Ada gangguan teknis sebentar.');
-  }
+  });
 };
 
 module.exports = { chatWithKakZ, chatDiscussQuestion, chatKonsultasi };

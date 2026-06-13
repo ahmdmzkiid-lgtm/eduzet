@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { pool } = require('../config/db');
 const { verifyToken, verifyAdmin } = require('../middleware/auth');
+const { getApiKeyManager } = require('../services/apiKeyManager');
 
 const decodeTokenFromRequest = (req) => {
   try {
@@ -542,6 +543,43 @@ router.delete('/team/:id', verifyToken, verifyAdmin, async (req, res, next) => {
     res.json({ success: true, message: 'Anggota tim berhasil dihapus.' });
   } catch (error) {
     next(error);
+  }
+});
+
+// GET /api/admin/api-keys-status - Monitor Gemini API keys health
+router.get('/api-keys-status', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const manager = getApiKeyManager();
+    const status = manager.getKeyStatus();
+
+    res.json({
+      success: true,
+      data: status,
+      message: 'API Keys status retrieved successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to get API keys status'
+    });
+  }
+});
+
+// POST /api/admin/api-keys-reset - Admin reset all API keys (clear cooldown)
+router.post('/api-keys-reset', verifyToken, verifyAdmin, async (req, res, next) => {
+  try {
+    const manager = getApiKeyManager();
+    manager.resetAllKeys();
+
+    res.json({
+      success: true,
+      message: 'All API keys reset to available status'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to reset API keys'
+    });
   }
 });
 

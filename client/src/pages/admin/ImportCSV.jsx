@@ -570,19 +570,9 @@ const ImportCSV = () => {
           </div>
         </div>
         <div className="p-8">
-          <span className="text-primary font-label-md text-label-md tracking-wider uppercase">Pro Tip</span>
-          <h2 className="font-headline-lg text-headline-lg text-on-surface mt-2 mb-6">Gunakan AI untuk generate soal otomatis.</h2>
-          <p className="font-body-lg text-body-lg text-on-surface-variant mb-8">
-            Tidak punya file Excel? Gunakan fitur Generate AI untuk membuat soal UTBK secara otomatis berdasarkan topik dan mata pelajaran yang Anda tentukan.
-          </p>
-          <div className="flex gap-4">
-            <a href="/admin/generate" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-label-md text-label-md hover:shadow-xl transition-all inline-block">
-              Generate AI
-            </a>
-            <a href="/admin/input" className="text-primary border border-primary px-8 py-3 rounded-lg font-label-md text-label-md hover:bg-primary/5 transition-all inline-block">
-              Input Manual
-            </a>
-          </div>
+          <a href="/admin/input" className="bg-primary text-on-primary px-8 py-3 rounded-lg font-label-md text-label-md hover:shadow-xl transition-all inline-block">
+            Input Manual
+          </a>
         </div>
       </section>
 
