@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
+import MaintenanceModal from '../components/MaintenanceModal';
 import './Register.css';
 
 const Login = () => {
@@ -50,7 +51,9 @@ const Login = () => {
   };
 
   return (
-    <div className="register-page">
+    <>
+      <MaintenanceModal />
+      <div className="register-page">
       {/* Desktop Left Panel */}
       <div className="register-left">
         <div className="auth-side-nav">
@@ -143,6 +146,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
