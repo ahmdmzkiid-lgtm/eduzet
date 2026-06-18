@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useMaintenance } from '../hooks/useMaintenance';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import './Register.css';
@@ -15,6 +16,7 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { register, loginWithGoogle } = useAuth();
+  const { isMaintenance } = useMaintenance();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -23,6 +25,10 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isMaintenance) {
+      toast.error('Pendaftaran sedang dinonaktifkan karena pemeliharaan sistem');
+      return;
+    }
     if (formData.password !== formData.confirmPassword) {
       toast.error('Password tidak cocok');
       return;
@@ -45,6 +51,10 @@ const Register = () => {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (isMaintenance) {
+      toast.error('Pendaftaran sedang dinonaktifkan karena pemeliharaan sistem');
+      return;
+    }
     try {
       setLoading(true);
       const res = await loginWithGoogle(credentialResponse.credential);

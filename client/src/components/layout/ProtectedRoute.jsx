@@ -1,12 +1,16 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { useMaintenance } from '../../hooks/useMaintenance';
+import MaintenanceOverlay from '../MaintenanceOverlay';
 import PageWrapper from './PageWrapper';
 
 // Prevents logged-in users from accessing login/register
 export const PublicRoute = () => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
-  if (loading) return null;
+  const { isAuthenticated, isAdmin, loading, loginOverlayVisible } = useAuth();
+  const { isMaintenance, loading: maintenanceLoading } = useMaintenance();
+  if (loading || maintenanceLoading) return null;
+  if (isMaintenance && !loginOverlayVisible) return <Navigate to="/maintenance" replace />;
   if (isAuthenticated) return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
   return <Outlet />;
 };
@@ -52,15 +56,17 @@ const CopyProtection = ({ children }) => {
       MozUserSelect: 'none',
       msUserSelect: 'none'
     }}>
-      {children}
+      <MaintenanceOverlay>{children}</MaintenanceOverlay>
     </div>
   );
 };
 
 // Student routes — no wrapper, each page handles its own layout/navbar
 export const StudentRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
+  const { isAuthenticated, loading, loginOverlayVisible } = useAuth();
+  const { isMaintenance, loading: maintenanceLoading } = useMaintenance();
+  if (loading || maintenanceLoading) return null;
+  if (isMaintenance && !loginOverlayVisible) return <Navigate to="/maintenance" replace />;
   return isAuthenticated ? (
     <CopyProtection>
       <Outlet />
@@ -72,8 +78,10 @@ export const StudentRoute = () => {
 
 // Student routes that need PageWrapper (pages without their own navbar)
 export const StudentRouteWrapped = () => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
+  const { isAuthenticated, loading, loginOverlayVisible } = useAuth();
+  const { isMaintenance, loading: maintenanceLoading } = useMaintenance();
+  if (loading || maintenanceLoading) return null;
+  if (isMaintenance && !loginOverlayVisible) return <Navigate to="/maintenance" replace />;
   return isAuthenticated ? (
     <CopyProtection>
       <PageWrapper><Outlet /></PageWrapper>
@@ -85,8 +93,10 @@ export const StudentRouteWrapped = () => {
 
 // Dark-theme protected routes (uses PageWrapper)
 export const ProtectedRoute = () => {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
+  const { isAuthenticated, loading, loginOverlayVisible } = useAuth();
+  const { isMaintenance, loading: maintenanceLoading } = useMaintenance();
+  if (loading || maintenanceLoading) return null;
+  if (isMaintenance && !loginOverlayVisible) return <Navigate to="/maintenance" replace />;
   return isAuthenticated ? (
     <PageWrapper><Outlet /></PageWrapper>
   ) : (
@@ -96,7 +106,9 @@ export const ProtectedRoute = () => {
 
 // Admin-only routes
 export const AdminRoute = () => {
-  const { isAuthenticated, isAdmin, loading } = useAuth();
-  if (loading) return null;
+  const { isAuthenticated, isAdmin, loading, loginOverlayVisible } = useAuth();
+  const { isMaintenance, loading: maintenanceLoading } = useMaintenance();
+  if (loading || maintenanceLoading) return null;
+  if (isMaintenance && !isAdmin && !loginOverlayVisible) return <Navigate to="/maintenance" replace />;
   return isAuthenticated && isAdmin ? <Outlet /> : <Navigate to="/dashboard" replace />;
 };

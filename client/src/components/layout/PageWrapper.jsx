@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { Toaster } from 'react-hot-toast';
+import MaintenanceOverlay from '../MaintenanceOverlay';
 import Footer from '../Footer';
 
 // Shared light-theme navbar for pages that need PageWrapper (e.g. Bookmark)
@@ -91,7 +92,7 @@ const PageWrapper = ({ children }) => {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: '#faf8ff', fontFamily: "'Inter', sans-serif" }}>
       <LightNavbar />
       <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {children}
+        <MaintenanceOverlay>{children}</MaintenanceOverlay>
       </main>
       <Footer />
       <Toaster

@@ -7,6 +7,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
+  const [loginOverlayVisible, setLoginOverlayVisible] = useState(false);
 
   const refreshUser = async () => {
     if (token) {
@@ -44,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', newToken);
       setToken(newToken);
       setUser(userData);
+      setLoginOverlayVisible(true);
       return response.data;
     } catch (error) {
       throw error;
@@ -56,6 +58,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(userData);
+    setLoginOverlayVisible(true);
     return res.data;
   };
 
@@ -65,6 +68,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(newUserData);
+    setLoginOverlayVisible(true);
     return res.data;
   };
 
@@ -85,6 +89,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     refreshUser,
+    loginOverlayVisible,
+    dismissLoginOverlay: () => setLoginOverlayVisible(false),
   };
 
   return (

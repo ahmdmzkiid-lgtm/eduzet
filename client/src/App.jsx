@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
+import { MaintenanceProvider } from './context/MaintenanceContext';
 import { NotificationProvider } from './hooks/useNotifications';
 import NotificationModal from './components/NotificationModal';
 import { AdminRoute, PublicRoute, StudentRoute, StudentRouteWrapped } from './components/layout/ProtectedRoute';
@@ -54,15 +55,24 @@ import TermsAndConditions from './pages/TermsAndConditions';
 import ContactUs from './pages/ContactUs';
 import Careers from './pages/Careers';
 import TeamPage from './pages/TeamPage';
+import MaintenancePage from './pages/MaintenancePage';
 import ScrollToTop from './components/ScrollToTop';
 
 
 function App() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
 
+  // Redirect users on the old domain to the landing page notice
+  const isEduzetDomain = window.location.hostname.includes('eduzet.my.id');
+  if (isEduzetDomain && window.location.pathname !== '/') {
+    window.location.replace('/');
+    return null;
+  }
+
   return (
     <GoogleOAuthProvider clientId={googleClientId}>
       <AuthProvider>
+        <MaintenanceProvider>
         <NotificationProvider>
         <Router>
           <ScrollToTop />
@@ -75,6 +85,7 @@ function App() {
           <Route path="/contact-us" element={<ContactUs />} />
           <Route path="/careers" element={<Careers />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/maintenance" element={<MaintenancePage />} />
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -138,6 +149,7 @@ function App() {
         <NotificationModal />
       </Router>
       </NotificationProvider>
+      </MaintenanceProvider>
       </AuthProvider>
     </GoogleOAuthProvider>
   );

@@ -24,6 +24,9 @@ const AdminSettings = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  // Maintenance Mode
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+
   useEffect(() => {
     settingsService.get().then(r => {
       const d = r.data.data;
@@ -34,6 +37,8 @@ const AdminSettings = () => {
       setTryoutBannerUrl(d.tryout_banner_url || '');
       setTryoutTitle(d.tryout_title || '');
       setTryoutStartTime(d.tryout_start_time || '');
+
+      setMaintenanceMode(d.maintenance_mode === 'true');
 
       // Parse schedule from settings
       if (d.schedule_json) {
@@ -297,6 +302,53 @@ const AdminSettings = () => {
           >
             {saving ? <><span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>Menyimpan...</> : <><span className="material-symbols-outlined text-[20px]">save</span>Simpan Perubahan Tryout</>}
           </button>
+        </div>
+      </div>
+
+      {/* ── MAINTENANCE MODE ── */}
+      <div className="mt-12">
+        <div className="mb-6">
+          <h3 className="font-headline-md text-headline-md text-on-surface border-b border-outline-variant pb-4 mb-6">Mode Pemeliharaan</h3>
+        </div>
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-2xl p-8 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-label-md text-label-md text-on-surface font-semibold">Aktifkan Mode Pemeliharaan</p>
+              <p className="text-on-surface-variant font-body-sm text-[13px] mt-1">
+                Saat diaktifkan, semua pengguna (kecuali admin) akan diblokir dan dialihkan ke halaman pemeliharaan. Login & pendaftaran juga dinonaktifkan.
+              </p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={maintenanceMode}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setMaintenanceMode(newValue);
+                  setSaving(true);
+                  try {
+                    await settingsService.update({ maintenance_mode: newValue ? 'true' : 'false' });
+                    toast.success(newValue ? 'Mode pemeliharaan diaktifkan' : 'Mode pemeliharaan dinonaktifkan');
+                  } catch {
+                    setMaintenanceMode(!newValue);
+                    toast.error('Gagal mengubah mode pemeliharaan');
+                  } finally {
+                    setSaving(false);
+                  }
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+            </label>
+          </div>
+          {maintenanceMode && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+              <p className="text-[13px] text-red-700 flex items-center gap-2">
+                <span className="material-symbols-outlined text-[18px]">warning</span>
+                Mode pemeliharaan sedang <strong>AKTIF</strong>. Semua akses pengguna non-admin akan diblokir.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useMaintenance } from '../hooks/useMaintenance';
 import { GoogleLogin } from '@react-oauth/google';
 import toast from 'react-hot-toast';
 import MaintenanceModal from '../components/MaintenanceModal';
@@ -12,12 +13,17 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
+  const { isMaintenance } = useMaintenance();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get('redirect') || null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isMaintenance) {
+      toast.error('Login sedang dinonaktifkan karena pemeliharaan sistem');
+      return;
+    }
     setLoading(true);
     try {
       const res = await login({ email, password });
@@ -32,6 +38,10 @@ const Login = () => {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (isMaintenance) {
+      toast.error('Login sedang dinonaktifkan karena pemeliharaan sistem');
+      return;
+    }
     try {
       setLoading(true);
       const res = await loginWithGoogle(credentialResponse.credential);
