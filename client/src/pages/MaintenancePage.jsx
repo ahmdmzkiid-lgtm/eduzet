@@ -68,7 +68,7 @@ const EduzetRedirectNotice = () => {
               <div className="space-y-1">
                 <h3 className="font-semibold text-slate-200 text-base">Beli Premium saat Maintenance?</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">
-                  Bagi yang membeli premium plan pada saat server maintenance, segera hubungi kami melalui Instagram <a href="https://instagram.com/eduzet.my.id" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline font-bold">@eduzet.my.id</a> (atau <a href="https://instagram.com/eduzet.my.id" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline font-bold">instagram.my.id</a>).
+                  Bagi yang membeli premium plan pada saat server maintenance, segera hubungi kami melalui WhatsApp di <a href="https://wa.me/6285183147625" target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:underline font-bold">085183147625</a>.
                 </p>
               </div>
             </div>
@@ -87,12 +87,12 @@ const EduzetRedirectNotice = () => {
             </a>
             
             <a
-              href="https://instagram.com/eduzet.my.id"
+              href="https://wa.me/6285183147625"
               target="_blank"
               rel="noopener noreferrer"
               className="w-full sm:w-auto px-6 py-4 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white font-semibold rounded-xl transition-all text-center flex items-center justify-center gap-2"
             >
-              Hubungi Instagram
+              Hubungi WhatsApp
             </a>
           </div>
 
